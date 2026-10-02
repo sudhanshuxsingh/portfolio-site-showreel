@@ -93,14 +93,25 @@ npm run capture                           # or: npm run capture -- cmdk hero-hak
 npm run mix
 
 # 3. Picture + final files
-npm run render:video                      # ~40 min on 4 cores
+npm run render:video                      # ~80 min on 4 cores
 npm run mux                               # out/showreel.mp4 + out/showreel-web.mp4
+
+# Fix one scene without a full re-render: render its frames, splice them in
+npx remotion render Showreel out/seg.mp4 --frames=3564-3695 --muted
+python3 scripts/splice.py out/showreel-video.mp4 out/seg.mp4:3564 && npm run mux
 
 npm run studio                            # live preview with sound
 ```
 
 Remotion uses the Chromium at `/opt/pw-browsers/...`. Set `REMOTION_BROWSER` to
 point it elsewhere.
+
+One rendering gotcha: an SVG that overflows its box by thousands of pixels
+and repaints every frame (the mark's dashed guide rails at full length) makes
+headless Chromium's compositor reuse stale tiles. That shows up as ghost copies
+of other parts of the frame. Keep the guide rails just long enough to reach the
+frame edges (`guideLength` ≈ 13–16 units). `scripts/dev/flicker.py` scans a
+render for frames that disagree with both neighbours.
 
 ## Layout
 
@@ -119,6 +130,7 @@ scripts/
   mix.py             music edit + sound design + master
   export-cues.ts     timeline → out/cues.json
   mux.sh             final encodes
+  splice.py          swap re-rendered frame ranges into a finished render
 public/
   capture/           recordings + stills of the real site (+ cursor/event JSON)
   audio/             site Haki sample, mixed soundtrack

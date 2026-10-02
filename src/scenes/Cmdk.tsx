@@ -159,7 +159,7 @@ export const Cmdk: React.FC = () => {
       </AbsoluteFill>
 
       {/* Key echo. */}
-      <div style={{ position: 'absolute', left: RAIL + 22, right: RAIL + 22, top: 1690, display: 'flex', gap: 14, justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', left: RAIL + 22, right: RAIL + 22, top: 212, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         {visible.map((chip) => {
           const p = tween(frame, [chip.at, chip.at + 8], [0, 1], ease.out);
           const o = tween(frame, [chip.at + 55, chip.at + 70], [1, 0]);
@@ -167,13 +167,13 @@ export const Cmdk: React.FC = () => {
             <div
               key={`${chip.label}-${chip.at}`}
               style={{
-                padding: '10px 22px',
-                borderRadius: 14,
+                padding: '5px 14px',
+                borderRadius: 10,
                 border: '2px solid #3f3f46',
-                borderBottomWidth: 6,
+                borderBottomWidth: 4,
                 background: '#111113',
                 fontFamily: chip.label.length > 2 ? mono : sans,
-                fontSize: 34,
+                fontSize: 26,
                 fontWeight: 500,
                 color: ink.fg,
                 opacity: p * o,

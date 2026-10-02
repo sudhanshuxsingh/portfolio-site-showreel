@@ -87,7 +87,8 @@ export const Reveal: React.FC = () => {
   const draw = tween(frame, [0, 52], [0, 1], ease.inOut);
   const orbit = tween(frame, [18, 150], [0, 1], ease.inOut);
   const extrude = tween(frame, [24, 120], [0, 1], ease.inOut);
-  const guides = tween(frame, [0, 70], [0, 40], ease.out);
+  // Long enough to reach the frame edges; far-overflowing SVG left stale compositor tiles.
+  const guides = tween(frame, [0, 70], [0, 16], ease.out);
   const settle = tween(frame, [150, 222], [0, 1], ease.inOut);
   const exit = tween(frame, [344, 369], [0, 1], ease.in);
 

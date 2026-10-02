@@ -132,9 +132,10 @@ export const Press: React.FC = () => {
       <Backdrop />
       <Label text="// egg 02 — tactile mark" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
       <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Press', 2), w('the mark.', [12, 22])]} />
-      <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', top: 1080 - 960 }}>
-        <Mark id="press" size={1000} camera={{ ...ISO, distance: 26, unit: 70 }} press={press} light={light} lightRadius={420} strokeWidth={2.6} guidesOpacity={0.6} />
-      </AbsoluteFill>
+      {/* Guides kept short: a far-overflowing SVG repainted every frame left stale compositor tiles. */}
+      <div style={{ position: 'absolute', left: 40, top: 580, width: 1000, height: 1000 }}>
+        <Mark id="press" size={1000} camera={{ ...ISO, distance: 26, unit: 70 }} press={press} light={light} lightRadius={420} strokeWidth={2.6} guidesOpacity={0.6} guideLength={13} />
+      </div>
       <div style={{ position: 'absolute', left: RAIL + 22, top: 1600, fontFamily: mono, fontSize: 26, color: ink.mutedFg, letterSpacing: '0.04em', opacity: tween(frame, [down, down + 10], [0, 1]) }}>
         spring k 520 · c 26 · depth {press.toFixed(2)}
       </div>

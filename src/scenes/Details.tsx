@@ -151,7 +151,14 @@ export const Details: React.FC = () => {
         const blur = (pin + pout) * 30;
         return (
           <AbsoluteFill key={card.word}>
-            <Words key={card.word} style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={card.word.length > 12 ? 128 : 150} lines={[[{ text: card.word, at: LAND[i] - 8 }]]} exitAt={end - 6} exit="fade" />
+            <Words
+              key={card.word}
+              style={{ position: 'absolute', left: RAIL + 14, top: 290 }}
+              size={card.word.length > 12 ? 128 : 150}
+              lines={[card.word.split(' ').map((text, k) => ({ text, at: (i === 0 ? 10 : start + 6) + k * 4 }))]}
+              exitAt={i === CARDS.length - 1 ? undefined : end - 14}
+              exit="fade"
+            />
             <div
               style={{
                 position: 'absolute',
