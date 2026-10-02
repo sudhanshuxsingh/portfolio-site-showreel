@@ -93,7 +93,7 @@ npm run capture                           # or: npm run capture -- cmdk hero-hak
 npm run mix
 
 # 3. Picture + final files
-npm run render:video                      # ~80 min on 4 cores
+npm run render:video                      # ~20 min on 4 cores
 npm run mux                               # out/showreel.mp4 + out/showreel-web.mp4
 
 # Fix one scene without a full re-render: render its frames, splice them in
@@ -106,12 +106,13 @@ npm run studio                            # live preview with sound
 Remotion uses the Chromium at `/opt/pw-browsers/...`. Set `REMOTION_BROWSER` to
 point it elsewhere.
 
-One rendering gotcha: an SVG that overflows its box by thousands of pixels
-and repaints every frame (the mark's dashed guide rails at full length) makes
-headless Chromium's compositor reuse stale tiles. That shows up as ghost copies
-of other parts of the frame. Keep the guide rails just long enough to reach the
-frame edges (`guideLength` ≈ 13–16 units). `scripts/dev/flicker.py` scans a
-render for frames that disagree with both neighbours.
+One rendering gotcha: with the ANGLE-on-SwiftShader GL backend (`swangle`),
+headless Chromium sometimes reused stale compositor tiles while a large SVG
+repainted every frame. That shows up as ghost copies of other parts of the
+frame. `remotion.config.ts` therefore uses plain `swiftshader`, which renders
+these frames cleanly and about 4× faster (~20 min for the whole reel on 4
+cores). `scripts/dev/flicker.py` scans a render for frames that disagree with
+both neighbours.
 
 ## Layout
 

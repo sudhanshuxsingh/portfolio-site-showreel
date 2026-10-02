@@ -13,6 +13,8 @@ Config.setCodec('h264');
 Config.setCrf(16);
 Config.setPixelFormat('yuv420p');
 Config.setConcurrency(Number(process.env.REMOTION_CONCURRENCY ?? 4));
-Config.setChromiumOpenGlRenderer('swangle');
+// Plain SwiftShader: the ANGLE path (swangle) reused stale compositor tiles in
+// headless renders (ghost copies of the frame) and was ~4x slower here.
+Config.setChromiumOpenGlRenderer('swiftshader');
 Config.setOverwriteOutput(true);
 Config.setEntryPoint('./src/index.ts');
