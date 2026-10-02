@@ -1,0 +1,42 @@
+{
+  "name": "portfolio-site-showreel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vertical cinematic showreel for the sudhanshuxsingh.in developer portfolio, built with Remotion from the portfolio's own components and real captures.",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "capture": "node scripts/capture.mjs",
+    "cues": "tsx scripts/export-cues.ts",
+    "mix": "npm run cues && python3 scripts/mix.py && python3 scripts/mix.py --no-slow && ffmpeg -v error -y -i public/audio/soundtrack.wav -c:a aac -b:a 256k public/audio/soundtrack.m4a",
+    "render:video": "remotion render Showreel out/showreel-video.mp4 --muted",
+    "mux": "bash scripts/mux.sh",
+    "build": "npm run mix && npm run render:video && npm run mux",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.8.1",
+    "@remotion/cli": "^4.0.532",
+    "@remotion/fonts": "^4.0.532",
+    "@remotion/media-utils": "^4.0.532",
+    "@remotion/motion-blur": "^4.0.532",
+    "@remotion/noise": "^4.0.532",
+    "@remotion/paths": "^4.0.532",
+    "@remotion/three": "^4.0.532",
+    "@remotion/transitions": "^4.0.532",
+    "@tabler/icons-react": "^3.48.0",
+    "@types/three": "^0.186.0",
+    "lucide-react": "^1.50.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.532",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "playwright": "1.56.1",
+    "tsx": "^4.23.15",
+    "typescript": "5.9.3"
+  }
+}

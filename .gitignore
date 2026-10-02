@@ -1,0 +1,11 @@
+node_modules
+.DS_Store
+*.log
+# Renders and intermediates (the finished reel is out/showreel*.mp4)
+out/*
+!out/showreel.mp4
+!out/showreel-web.mp4
+!out/poster.jpg
+# The full song is a commercial track: keep it local (see README → Music).
+public/audio/music/
+public/audio/*.wav
