@@ -503,10 +503,15 @@ def carve(x: np.ndarray) -> np.ndarray:
 
 
 def level(x: np.ndarray, target: float, hold: int = 0, window: float = 0.6, smooth: float = 1.4) -> np.ndarray:
-    """Ride the bed to a constant loudness: slow, zero-phase gain within ±7 dB."""
+    """
+    Bring the bed to its level, then ride it there: a slow, zero-phase gain that
+    moves at most 6 dB either way from the static gain, so it stays constant.
+    """
     n = int(window * SR)
     power = np.convolve(np.mean(x ** 2, axis=0), np.ones(n) / n, mode='same')
-    gain_db = np.clip(target - 10 * np.log10(power + 1e-12), -7, 7)
+    env = 10 * np.log10(power + 1e-12)
+    static = target - np.median(env[hold:])
+    gain_db = np.clip(target - env, static - 6, static + 6)
     gain_db[:hold] = gain_db[hold]
     b, a = signal.butter(1, 1 / (smooth * SR / 2))
     gain_db = signal.filtfilt(b, a, gain_db)
