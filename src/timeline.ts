@@ -32,9 +32,9 @@ export interface MusicSegment {
 export const music: MusicSegment[] = [
   // Slowed and soft, with the vocals: the hook as a memory under "most portfolios
   // look the same". The sung line ends at ~7.06 s; the only vocals in the reel.
-  { id: 'intro', at: 0, from: 43.0, to: 49.4, rate: 0.85, gain: 1, fadeIn: 1.2, fadeOut: 0.35, lowpass: [1800, 6000], reverb: 0.4 },
+  { id: 'intro', at: 0, from: 43.0, to: 49.4, rate: 0.85, gain: 3, fadeIn: 1.2, fadeOut: 0.35, lowpass: [1800, 6000], reverb: 0.4 },
   // The band's groove, slowed, to close: its first downbeat lands on the outro.
-  { id: 'outro', at: 78.0, from: 35.312, to: 41.3, rate: 0.85, gain: 0, fadeIn: 0.05, fadeOut: 3.4, lowpass: [7000, 1400], reverb: 0.45 },
+  { id: 'outro', at: 78.0, from: 35.312, to: 41.3, rate: 0.85, gain: 1, fadeIn: 0.05, fadeOut: 3.4, lowpass: [7000, 1400], reverb: 0.45 },
 ];
 
 /**
@@ -58,8 +58,8 @@ export const bed = {
   downbeat: 8.0,
   /** Source time the band's entry fill starts, played into that downbeat. */
   pickup: 34.75,
-  /** Constant level of the bed, dBFS RMS before mastering (the effects sit above it). */
-  level: -32,
+  /** Constant level of the bed, dBFS RMS before mastering: well under the effects. */
+  level: -38,
   /** [groove, bars] in order; 44 bars ≈ 8.0 → 78.0 s. */
   plan: [
     ['band', 4], ['band', 4], ['band', 1],

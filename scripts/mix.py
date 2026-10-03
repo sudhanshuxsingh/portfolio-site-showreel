@@ -576,12 +576,12 @@ def main():
         for name, bus in (('music', music_bus), ('sfx', sfx_bus + wet)):
             write_wav(ROOT / f'out/{name}.wav', bus)
 
-    # Master: gentle glue, then -15 LUFS for phones under a -1 dBFS ceiling. The bed
-    # stays as far under the effects as the levels above put it.
-    mix = np.tanh(mix * 1.1) / np.tanh(1.1)
-    for _ in range(3):
-        mix *= db(-15.0 - loudness(mix))
-        mix = limiter(mix, db(-1.0))
+    # Master: the effects set the volume, not the music. Their loudness lands at
+    # -13 LUFS, the bed stays as far below them as the timeline puts it (about
+    # 11 LU), and a limiter holds the peaks under -1 dBFS.
+    gain = db(-13.0 - loudness(sfx_bus + wet))
+    mix = np.tanh(mix * gain * 1.1) / np.tanh(1.1)
+    mix = limiter(mix, db(-1.0))
     # Short fade at the very end.
     tail = int(0.25 * SR)
     mix[:, -tail:] *= np.linspace(1, 0, tail)
