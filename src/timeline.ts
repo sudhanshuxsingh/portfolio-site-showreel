@@ -4,9 +4,9 @@
  * JSON export (npm run cues) for the soundtrack, so they cannot drift apart.
  *
  * Music: "Mere Paas Aao Mere Dosto". The slowed hook (0:43–0:49, with its
- * vocals) opens the reel; from the drop on, a low, constant background bed loops
- * whole bars of the song's vocal-free groove passages, end to end; the slowed
- * groove closes it. The sound effects lead; the music stays underneath.
+ * vocals) opens the reel; from the drop on, one guitar groove from the song loops
+ * end to end, low and constant; the same groove, slowed, closes it. The sound
+ * effects lead; the music stays well underneath.
  */
 export const FPS = 60;
 export const sec = (s: number) => Math.round(s * FPS);
@@ -33,41 +33,30 @@ export const music: MusicSegment[] = [
   // Slowed and soft, with the vocals: the hook as a memory under "most portfolios
   // look the same". The sung line ends at ~7.06 s; the only vocals in the reel.
   { id: 'intro', at: 0, from: 43.0, to: 49.4, rate: 0.85, gain: 3, fadeIn: 1.2, fadeOut: 0.35, lowpass: [1800, 6000], reverb: 0.4 },
-  // The band's groove, slowed, to close: its first downbeat lands on the outro.
+  // The guitar groove, slowed, to close: its first downbeat lands on the outro.
   { id: 'outro', at: 78.0, from: 35.312, to: 41.3, rate: 0.85, gain: 1, fadeIn: 0.05, fadeOut: 3.4, lowpass: [7000, 1400], reverb: 0.45 },
 ];
 
 /**
- * Vocal-free passages of the song as whole bars: `from` is a downbeat, `to` the
- * downbeat after the last bar. Nothing here was separated from the vocals, so
- * nothing can sound hollow; the bed below loops these bars end to end.
+ * The loop: four bars of the band's guitar groove before the first sung line
+ * (0:35.3–0:41.7). `from` is a downbeat, `to` the downbeat after the last bar.
+ * No vocals in it and nothing separated from them, so nothing sounds hollow.
  */
 export const grooves = {
-  // The band's entry, before the first sung line (0:35.3–0:41.7).
-  band: { from: 35.312, to: 41.675, bars: 4 },
-  // The strings' glide after the first chorus (1:00.8–1:07.2).
-  glide: { from: 60.815, to: 67.154, bars: 4 },
-  // The organ-and-strings build before the breakdown (2:35.3–2:43.3).
-  build: { from: 155.273, to: 163.284, bars: 5 },
+  guitar: { from: 35.312, to: 41.675, bars: 4 },
 } as const;
 export type GrooveId = keyof typeof grooves;
 
-/** The background bed, from the drop to the outro: one continuous groove. */
+/** The background bed, from the drop to the outro: the one loop, end to end. */
 export const bed = {
   /** Video time of the first downbeat: the logo. */
   downbeat: 8.0,
   /** Source time the band's entry fill starts, played into that downbeat. */
   pickup: 34.75,
-  /** Constant level of the bed, dBFS RMS before mastering: well under the effects. */
-  level: -38,
-  /** [groove, bars] in order; 44 bars ≈ 8.0 → 78.0 s. */
-  plan: [
-    ['band', 4], ['band', 4], ['band', 1],
-    ['glide', 4], ['band', 4], ['glide', 4],
-    ['build', 5],
-    ['band', 4], ['band', 4], ['glide', 4],
-    ['build', 5], ['band', 1],
-  ] as [GrooveId, number][],
+  /** How far under the effects the bed sits, in LU (the effects set the volume). */
+  under: 14,
+  /** [groove, bars] in order: the guitar loop eleven times, 44 bars ≈ 8.0 → 78.0 s. */
+  plan: Array.from({ length: 11 }, () => ['guitar', 4]) as [GrooveId, number][],
 };
 
 /** Scene boundaries in seconds. */

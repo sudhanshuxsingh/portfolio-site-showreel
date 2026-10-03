@@ -66,14 +66,14 @@ theme names, the rolling section index) are set in the serif alone.
 **Cuts.** Most scenes land with a zoom punch (104.5 % settling in a quarter
 second) and a thump.
 
-**Sound.** The effects lead and the music stays underneath. `src/cues.ts`
-turns the timeline and the capture event logs into 264 timed cues.
-`scripts/mix.py` synthesizes every effect in numpy: keys, wide stereo
-whooshes, trailer hits for the cold open, sub drops, reverse swells into the
-big moments, risers, glitches, a wooden knock on each headline and a soft
-glint on its serif word. The UI click is the site's exact Web Audio recipe
-(sine 900 → 500 Hz, 55 ms). The master is limited to -15 LUFS under a -1 dBFS
-ceiling.
+**Sound.** The effects lead and the music stays well underneath. `src/cues.ts`
+turns the timeline and the capture event logs into 238 timed cues.
+`scripts/mix.py` synthesizes every effect in numpy: keys, clicks, trailer hits
+for the cold open, sub drops, reverse swells into the big moments, risers,
+glitches, a wooden knock on each headline and a soft glint on its serif word.
+Nothing that slides in gets a whoosh. The UI click is the site's exact Web
+Audio recipe (sine 900 → 500 Hz, 55 ms). The effects set the master volume
+(-13 LUFS), with a limiter under -1 dBFS.
 
 ## Music
 
@@ -82,17 +82,15 @@ ceiling.
 - **Start:** the slowed hook (0:43–0:49) with its vocals, soft, under the
   cold open and the hook. The sung line ends at ~7 s; these are the only
   vocals in the reel.
-- **From the drop to the outro:** one continuous bed, with no gaps, cuts,
-  ducking or tape-stops. It loops whole bars of the song's own vocal-free
-  groove passages: the band's entry (0:35), the strings' glide after the
-  first chorus (1:00) and the organ-and-strings build (2:35). Nothing is
-  separated from the vocals, so nothing sounds hollow. Each join is matched
-  by rhythm and crossfaded onto a downbeat, so the groove carries on in
-  time. The bed is ridden to one constant low level, with room carved out
-  for the effects (low cut at 90 Hz, a dip at 2.5 kHz). Its first downbeat
-  lands on the logo at 0:08.
-- **End:** the band's groove, slowed and soft, picks up on the last bar of
-  the bed.
+- **From the drop to the outro:** one guitar loop, end to end, with no gaps,
+  cuts, ducking or tape-stops: the four bars of the band's guitar groove
+  before the first sung line (0:35.3–0:41.7). No vocals were ever in it, so
+  nothing sounds hollow. Each repeat is matched by rhythm and crossfaded
+  onto the downbeat, so it carries on in time. The loop is ridden to one
+  constant level 14 LU under the effects, with room carved out for them
+  (low cut at 90 Hz, a dip at 2.5 kHz). Its first downbeat lands on the logo
+  at 0:08.
+- **End:** the same groove, slowed and soft, picks up on the last bar.
 - **`--no-slow` variant:** keeps the start and end soft but at normal speed. To
   use it, run `npm run mux -- public/audio/soundtrack-noslow.wav`.
 

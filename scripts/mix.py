@@ -6,11 +6,11 @@ Mixes the showreel soundtrack: the music edit + synthesized sound design.
     python3 scripts/mix.py --no-slow      # intro/outro soft but at normal speed
 
 Music: public/audio/music/mere-paas-aao.mp3 ("Mere Paas Aao Mere Dosto"), per
-src/timeline.ts. The slowed hook with its vocals opens; from the drop, a bed of
-whole bars from the song's vocal-free groove passages runs end to end, each
-join matched by rhythm and crossfaded onto a downbeat, then ridden to one
-constant low level; the slowed groove closes. The effects sit on top, and the
-master is limited to -14 LUFS for phones.
+src/timeline.ts. The slowed hook with its vocals opens; from the drop, one
+four-bar guitar groove from the song loops end to end, each join matched by
+rhythm and crossfaded onto the downbeat, then ridden to one constant level a
+fixed distance under the effects; the same groove, slowed, closes. The effects
+set the master volume, with a limiter under -1 dBFS.
 
 Every sound effect is synthesized here. The UI click is the site's own recipe
 (src/lib/sfx.ts: sine 900→500 Hz over 55 ms); the avatar egg uses the site's
@@ -164,22 +164,6 @@ def sfx_key(pan=0.0, heavy=False):
     body = filt(RNG.standard_normal(n), 'low', 900) * env_ar(n, 0.001, 0.03, 5) * (0.8 if heavy else 0.25)
     x = normalize(click * 0.9 + thock + body)
     return stereo(x, pan)
-
-
-def sfx_whoosh(dur=0.45, pan=0.0, rising=False):
-    """Air moving past: wide stereo noise, a resonant sweep that peaks on the pass-by, and a pan across."""
-    n = int(dur * SR)
-    t = np.linspace(0, 1, n)
-    peak = 0.6 if not rising else 0.94
-    shape = np.where(t < peak, (t / peak) ** 2.2, ((1 - t) / (1 - peak)) ** 1.5)
-    noise = RNG.standard_normal((2, n))
-    centre = (380 + 3400 * shape ** 1.4) if not rising else 260 * (22 ** t)
-    air = sweep_filter(noise, 'band', centre, q=1.5)
-    body = filt(noise, 'low', 420) * 0.4
-    x = (air + body) * shape
-    pans = np.clip(pan + (t - 0.5) * 0.9, -1, 1)
-    x = np.stack([x[0] * np.cos((pans + 1) * np.pi / 4), x[1] * np.sin((pans + 1) * np.pi / 4)])
-    return normalize(reverb(x, 0.16)[:, : int(n * 1.2)])
 
 
 def sfx_impact(soft=False):
@@ -359,8 +343,6 @@ FACTORY = {
     'tick': lambda c: sfx_tick(c.get('pan', 0)),
     'key': lambda c: sfx_key(c.get('pan', 0)),
     'keyHeavy': lambda c: sfx_key(c.get('pan', 0), heavy=True),
-    'whoosh': lambda c: sfx_whoosh(0.42, c.get('pan', 0)),
-    'whooshLong': lambda c: sfx_whoosh(1.05, c.get('pan', 0)),
     'impact': lambda c: sfx_impact(),
     'impactSoft': lambda c: sfx_impact(soft=True),
     'riser': lambda c: sfx_riser(c.get('dur', 2.0)),
@@ -375,7 +357,6 @@ FACTORY = {
     'haki': lambda c: HAKI,
     'scratch': lambda c: sfx_scratch(c.get('pan', 0)),
     'hit': lambda c: sfx_hit(),
-    'swish': lambda c: sfx_whoosh(0.24, c.get('pan', 0)),
     'boom': lambda c: sfx_boom(),
     'flash': lambda c: sfx_flash(c.get('pan', 0)),
     'reverse': lambda c: sfx_reverse(c.get('dur', 1.0)),
@@ -385,15 +366,15 @@ FACTORY = {
 
 # Per-type level (dB) before each cue's own trim.
 LEVEL = {
-    'click': -4, 'tick': -15, 'key': -12, 'keyHeavy': -6, 'whoosh': -10, 'whooshLong': -10,
+    'click': -4, 'tick': -15, 'key': -12, 'keyHeavy': -6,
     'impact': -3, 'impactSoft': -5, 'riser': -10, 'pop': -12, 'blip': -8, 'glitch': -12,
     'thump': -4, 'boing': -12, 'scan': -8, 'shimmer': -14, 'rumble': -6, 'haki': -2,
-    'scratch': -14, 'hit': -7, 'swish': -12, 'boom': -3, 'flash': -3, 'reverse': -10,
+    'scratch': -14, 'hit': -7, 'boom': -3, 'flash': -3, 'reverse': -10,
     'tock': -10, 'shine': -16,
 }
 REVERB_SEND = {
-    'tick': 0.25, 'click': 0.12, 'pop': 0.2, 'whoosh': 0.2, 'key': 0.06, 'keyHeavy': 0.18, 'blip': 0.2,
-    'haki': 0.18, 'tock': 0.22, 'flash': 0.2, 'swish': 0.15,
+    'tick': 0.25, 'click': 0.12, 'pop': 0.2, 'key': 0.06, 'keyHeavy': 0.18, 'blip': 0.2,
+    'haki': 0.18, 'tock': 0.22, 'flash': 0.2,
 }
 
 
@@ -547,25 +528,6 @@ def main():
     sfx_bus = np.zeros((2, length), dtype=np.float64)
     send_bus = np.zeros((2, length), dtype=np.float64)
 
-    song_path = ROOT / 'public/audio/music/mere-paas-aao.mp3'
-    if song_path.exists():
-        song = decode(song_path).astype(np.float64)
-        bed = data['bed']
-        audio, at, joins = build_bed(song, bed, data['grooves'])
-        audio = level(carve(audio), bed['level'], hold=int((bed['downbeat'] - at) * SR))
-        place(music_bus, audio, at)
-        print(f'  bed: {len(joins) - 1} grooves, {joins[0]:.3f} → {joins[-1]:.3f} s; joins at',
-              ' '.join(f'{j:.2f}' for j in joins[1:-1]))
-        for seg in data['music']:
-            x = music_segment(song, seg, slow)
-            a = int(seg['fadeIn'] * SR) + 1
-            body = x[:, a:max(a + 1, x.shape[1] - int((seg['fadeOut'] + 1.6) * SR))]
-            x *= db(bed['level'] + seg['gain']) / rms(body)
-            # The outro picks up exactly where the bed's last bar ends.
-            place(music_bus, x, joins[-1] if seg['id'] == 'outro' else seg['at'])
-    else:
-        print('! music not found — mixing sound design only')
-
     for cue in data['cues']:
         clip = FACTORY[cue['type']](cue)
         gain = db(LEVEL[cue['type']] + cue.get('gain', 0))
@@ -575,6 +537,30 @@ def main():
             place(send_bus, clip, t, gain * REVERB_SEND[cue['type']])
 
     wet = signal.fftconvolve(send_bus, IR, axes=-1)[:, :length] * 0.6
+    fx = loudness(sfx_bus + wet)
+
+    song_path = ROOT / 'public/audio/music/mere-paas-aao.mp3'
+    if song_path.exists():
+        song = decode(song_path).astype(np.float64)
+        bed = data['bed']
+        audio, at, joins = build_bed(song, bed, data['grooves'])
+        hold = int((bed['downbeat'] - at) * SR)
+        audio = level(carve(audio), -30.0, hold=hold)
+        # The bed sits a fixed distance under the effects, however busy they are.
+        audio *= db(fx - bed['under'] - loudness(audio[:, hold:]))
+        bed_rms = 20 * np.log10(rms(audio[:, hold:]))
+        place(music_bus, audio, at)
+        print(f'  bed: {len(joins) - 1} loops, {joins[0]:.3f} → {joins[-1]:.3f} s, {bed["under"]} LU under the effects')
+        for seg in data['music']:
+            x = music_segment(song, seg, slow)
+            a = int(seg['fadeIn'] * SR) + 1
+            body = x[:, a:max(a + 1, x.shape[1] - int((seg['fadeOut'] + 1.6) * SR))]
+            x *= db(bed_rms + seg['gain']) / rms(body)
+            # The outro picks up exactly where the bed's last bar ends.
+            place(music_bus, x, joins[-1] if seg['id'] == 'outro' else seg['at'])
+    else:
+        print('! music not found — mixing sound design only')
+
     mix = music_bus + sfx_bus + wet
     if '--stems' in sys.argv:
         # QA: the music and the effects on their own, before mastering.
@@ -582,9 +568,9 @@ def main():
             write_wav(ROOT / f'out/{name}.wav', bus)
 
     # Master: the effects set the volume, not the music. Their loudness lands at
-    # -13 LUFS, the bed stays as far below them as the timeline puts it (about
-    # 11 LU), and a limiter holds the peaks under -1 dBFS.
-    gain = db(-13.0 - loudness(sfx_bus + wet))
+    # -13 LUFS, the bed `under` LU below them, and a limiter holds the peaks
+    # under -1 dBFS.
+    gain = db(-13.0 - fx)
     mix = np.tanh(mix * gain * 1.1) / np.tanh(1.1)
     mix = limiter(mix, db(-1.0))
     # Short fade at the very end.
