@@ -5,11 +5,12 @@ Mixes the showreel soundtrack: the music edit + synthesized sound design.
     python3 scripts/mix.py                # → public/audio/soundtrack.wav
     python3 scripts/mix.py --no-slow      # intro/outro soft but at normal speed
 
-Music: public/audio/music/mere-paas-aao.mp3 ("Mere Paas Aao Mere Dosto"), cut
-per the edit in src/timeline.ts — mostly 0:43–0:57, 1:18–1:36 where needed,
-soft and slowed at the start and the end. Segments marked `stem: 'instrumental'`
-are cut from mere-paas-aao.instrumental.wav (python3 scripts/separate.py), so
-the vocals are only heard in the opening seconds.
+Music: public/audio/music/mere-paas-aao.mp3 ("Mere Paas Aao Mere Dosto"), per
+src/timeline.ts. The slowed hook with its vocals opens; from the drop, a bed of
+whole bars from the song's vocal-free groove passages runs end to end, each
+join matched by rhythm and crossfaded onto a downbeat, then ridden to one
+constant low level; the slowed groove closes. The effects sit on top, and the
+master is limited to -14 LUFS for phones.
 
 Every sound effect is synthesized here. The UI click is the site's own recipe
 (src/lib/sfx.ts: sine 900→500 Hz over 55 ms); the avatar egg uses the site's
@@ -118,6 +119,16 @@ def place(bus: np.ndarray, clip: np.ndarray, t: float, gain: float = 1.0):
     bus[:, i:j] += clip[:, : j - i] * gain
 
 
+def write_wav(path: Path, x: np.ndarray):
+    import wave
+    pcm = (np.clip(x, -1, 1).T * 32767).astype(np.int16)
+    with wave.open(str(path), 'wb') as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        w.writeframes(pcm.tobytes())
+
+
 def normalize(x: np.ndarray, peak: float = 1.0) -> np.ndarray:
     m = np.max(np.abs(x)) + 1e-9
     return x * (peak / m)
@@ -156,15 +167,19 @@ def sfx_key(pan=0.0, heavy=False):
 
 
 def sfx_whoosh(dur=0.45, pan=0.0, rising=False):
+    """Air moving past: wide stereo noise, a resonant sweep that peaks on the pass-by, and a pan across."""
     n = int(dur * SR)
     t = np.linspace(0, 1, n)
-    noise = RNG.standard_normal(n)
-    shape = np.sin(np.pi * t) ** 2
-    freqs = (400 + 2600 * np.sin(np.pi * t) ** 1.5) if not rising else (300 * (20 ** t))
-    x = sweep_filter(noise, 'band', freqs, q=1.1)[0] * shape
-    x = normalize(x)
-    pans = pan + (t - 0.5) * 0.6
-    return np.stack([x * np.cos((pans + 1) * np.pi / 4), x * np.sin((pans + 1) * np.pi / 4)])
+    peak = 0.6 if not rising else 0.94
+    shape = np.where(t < peak, (t / peak) ** 2.2, ((1 - t) / (1 - peak)) ** 1.5)
+    noise = RNG.standard_normal((2, n))
+    centre = (380 + 3400 * shape ** 1.4) if not rising else 260 * (22 ** t)
+    air = sweep_filter(noise, 'band', centre, q=1.5)
+    body = filt(noise, 'low', 420) * 0.4
+    x = (air + body) * shape
+    pans = np.clip(pan + (t - 0.5) * 0.9, -1, 1)
+    x = np.stack([x[0] * np.cos((pans + 1) * np.pi / 4), x[1] * np.sin((pans + 1) * np.pi / 4)])
+    return normalize(reverb(x, 0.16)[:, : int(n * 1.2)])
 
 
 def sfx_impact(soft=False):
@@ -284,6 +299,59 @@ def sfx_hit():
     return stereo(normalize(x))
 
 
+def sfx_boom(dur=2.4):
+    """Sub drop for the big landings, saturated so phone speakers still feel it."""
+    n = int(dur * SR)
+    t = t_axis(n)
+    sub = np.sin(2 * np.pi * np.cumsum(34 + 44 * np.exp(-t * 3.2)) / SR) * np.exp(-t * 1.5)
+    sub = np.tanh(sub * 2.4) / np.tanh(2.4)
+    thud = np.sin(2 * np.pi * np.cumsum(55 + 120 * np.exp(-t * 14)) / SR) * env_ar(n, 0.001, 0.1, 4) * 0.7
+    click = filt(RNG.standard_normal(n), 'band', 2600, 1.0) * env_ar(n, 0.0004, 0.01, 6) * 0.45
+    return reverb(stereo(normalize(sub + thud + click)), 0.22)[:, : int(n * 1.05)]
+
+
+def sfx_flash(pan=0.0):
+    """A trailer-style hit for hard cuts: transient, punch, a short metallic ring, air."""
+    n = int(0.8 * SR)
+    t = t_axis(n)
+    transient = filt(RNG.standard_normal(n), 'high', 2200) * env_ar(n, 0.0003, 0.018, 7)
+    punch = np.tanh(2 * np.sin(2 * np.pi * np.cumsum(46 + 170 * np.exp(-t * 26)) / SR) * env_ar(n, 0.0008, 0.16, 4))
+    ring = sum(a * np.sin(2 * np.pi * f * t + RNG.uniform(0, 6.28)) for f, a in ((523, 0.5), (784, 0.35), (1047, 0.25), (1568, 0.15)))
+    ring *= env_ar(n, 0.001, 0.42, 4) * 0.14
+    x = stereo(normalize(transient * 0.8 + punch + ring), pan)
+    x += filt(RNG.standard_normal((2, n)), 'band', 6500, 0.8) * env_ar(n, 0.001, 0.12, 5) * 0.18
+    return reverb(normalize(x), 0.28)[:, : int(n * 1.2)]
+
+
+def sfx_reverse(dur=1.0):
+    """Reverse-cymbal swell. Its cue time is when it ENDS, on the hit it leads into."""
+    n = int(dur * SR)
+    t = np.linspace(0, 1, n)
+    x = sweep_filter(RNG.standard_normal((2, n)), 'high', 700 * (7 ** t), q=0.7)
+    x += sum(np.sin(2 * np.pi * f * t * dur + RNG.uniform(0, 6.28)) for f in (3136, 4699, 6272)) * 0.04
+    x *= t ** 3.2
+    x[:, -int(0.004 * SR):] *= np.linspace(1, 0, int(0.004 * SR))
+    return normalize(x)
+
+
+def sfx_tock(pan=0.0):
+    """A soft wooden knock for a headline word landing."""
+    n = int(0.12 * SR)
+    t = t_axis(n)
+    body = np.sin(2 * np.pi * np.cumsum(170 + 260 * np.exp(-t * 30)) / SR) * env_ar(n, 0.0006, 0.05, 5)
+    click = filt(RNG.standard_normal(n), 'band', 3800, 2.0) * env_ar(n, 0.0003, 0.006, 6) * 0.5
+    return stereo(normalize(body + click), pan)
+
+
+def sfx_shine(pan=0.0):
+    """A glint for the serif word: soft bell partials in the song's key, with a long tail."""
+    n = int(0.9 * SR)
+    t = t_axis(n)
+    x = (np.sin(2 * np.pi * 1760 * t) + 0.55 * np.sin(2 * np.pi * 2637 * t) + 0.25 * np.sin(2 * np.pi * 3520 * t))
+    x *= env_ar(n, 0.003, 0.5, 4)
+    return reverb(stereo(normalize(x), pan), 0.45)[:, :n]
+
+
 HAKI = decode(ROOT / 'public/audio/conquerors-haki.mp3')
 
 FACTORY = {
@@ -307,22 +375,32 @@ FACTORY = {
     'haki': lambda c: HAKI,
     'scratch': lambda c: sfx_scratch(c.get('pan', 0)),
     'hit': lambda c: sfx_hit(),
+    'swish': lambda c: sfx_whoosh(0.24, c.get('pan', 0)),
+    'boom': lambda c: sfx_boom(),
+    'flash': lambda c: sfx_flash(c.get('pan', 0)),
+    'reverse': lambda c: sfx_reverse(c.get('dur', 1.0)),
+    'tock': lambda c: sfx_tock(c.get('pan', 0)),
+    'shine': lambda c: sfx_shine(c.get('pan', 0)),
 }
 
 # Per-type level (dB) before each cue's own trim.
 LEVEL = {
-    'click': -8, 'tick': -20, 'key': -17, 'keyHeavy': -9, 'whoosh': -16, 'whooshLong': -15,
-    'impact': -3, 'impactSoft': -7, 'riser': -12, 'pop': -16, 'blip': -12, 'glitch': -16,
-    'thump': -6, 'boing': -16, 'scan': -12, 'shimmer': -18, 'rumble': -6, 'haki': -2,
-    'scratch': -18, 'hit': -9,
+    'click': -4, 'tick': -15, 'key': -12, 'keyHeavy': -6, 'whoosh': -10, 'whooshLong': -10,
+    'impact': -3, 'impactSoft': -5, 'riser': -10, 'pop': -12, 'blip': -8, 'glitch': -12,
+    'thump': -4, 'boing': -12, 'scan': -8, 'shimmer': -14, 'rumble': -6, 'haki': -2,
+    'scratch': -14, 'hit': -7, 'swish': -12, 'boom': -3, 'flash': -3, 'reverse': -10,
+    'tock': -10, 'shine': -16,
 }
-REVERB_SEND = {'tick': 0.25, 'click': 0.12, 'pop': 0.2, 'whoosh': 0.2, 'key': 0.06, 'keyHeavy': 0.18, 'blip': 0.2, 'haki': 0.18}
+REVERB_SEND = {
+    'tick': 0.25, 'click': 0.12, 'pop': 0.2, 'whoosh': 0.2, 'key': 0.06, 'keyHeavy': 0.18, 'blip': 0.2,
+    'haki': 0.18, 'tock': 0.22, 'flash': 0.2, 'swish': 0.15,
+}
 
 
 # ---------------------------------------------------------------- music
 
 def music_segment(song: np.ndarray, seg: dict, slow: bool) -> np.ndarray:
-    """Cut, (optionally) slow, filter, fade, reverb and level one piece of the edit."""
+    """Cut, (optionally) slow, filter and fade one of the slowed bookends."""
     rate = seg['rate'] if slow else 1.0
     span = seg['to'] - seg['from']
     if seg['rate'] != 1 and not slow:
@@ -336,17 +414,6 @@ def music_segment(song: np.ndarray, seg: dict, slow: bool) -> np.ndarray:
     if seg.get('lowpass'):
         f0, f1 = seg['lowpass']
         x = sweep_filter(x, 'low', np.geomspace(f0, f1, n), q=0.8)
-    if seg.get('tapeStop'):
-        # Turntable wind-down after `to`: speed falls 1× → 0 over `tapeStop` seconds.
-        d = int(seg['tapeStop'] * SR)
-        b = a + int(span * SR)
-        src = song[:, b:b + d]
-        speed = (1 - np.linspace(0, 1, d)) ** 1.6
-        pos = np.cumsum(speed)
-        wound = np.stack([np.interp(pos, np.arange(src.shape[1]), ch) for ch in src])
-        wound *= np.linspace(1, 0.08, d) ** 1.5
-        x = np.concatenate([x, filt(wound, 'low', 3200)], axis=1)
-        n = x.shape[1]
     fi, fo = int(seg['fadeIn'] * SR), int(seg['fadeOut'] * SR)
     if fi:
         x[:, :fi] *= np.sin(np.linspace(0, np.pi / 2, fi)) ** 2
@@ -354,7 +421,117 @@ def music_segment(song: np.ndarray, seg: dict, slow: bool) -> np.ndarray:
         x[:, n - fo:] *= np.cos(np.linspace(0, np.pi / 2, fo)) ** 2
     if seg.get('reverb'):
         x = reverb(x, seg['reverb'])[:, : n + int(1.6 * SR)]
-    return x * db(seg['gain'])
+    return x
+
+
+def flux(x: np.ndarray, t0: float, t1: float, hop: int = 96) -> np.ndarray:
+    """Percussive onset envelope of the song between t0 and t1 (one value per hop)."""
+    mono = x[:, int(t0 * SR):int(t1 * SR)].mean(0)
+    _, _, z = signal.stft(mono, SR, nperseg=1024, noverlap=1024 - hop, boundary=None, padded=False)
+    mag = np.log1p(100 * np.abs(z))
+    env = np.maximum(0, np.diff(mag, axis=1)).sum(0)
+    return np.concatenate([[0.0], env])
+
+
+def seam(song: np.ndarray, end: float, start: float, window: float = 1.2, search: float = 0.045) -> float:
+    """
+    Where to leave a groove so the next one carries on in time: the point near
+    `end` whose continuation has the same rhythm as the music after `start`.
+    """
+    hop = 96
+    ref = flux(song, start, start + window, hop)
+    span = flux(song, end - search, end + search + window, hop)
+    scores = [
+        np.dot(ref, span[k:k + len(ref)]) / (np.linalg.norm(span[k:k + len(ref)]) + 1e-9)
+        for k in range(0, len(span) - len(ref))
+    ]
+    return end - search + int(np.argmax(scores)) * hop / SR
+
+
+def build_bed(song: np.ndarray, bed: dict, grooves: dict):
+    """
+    Whole bars of the vocal-free grooves, end to end, joined on downbeats with a
+    30 ms crossfade that ends on the downbeat, so every hit stays crisp. Returns
+    the audio, the video time it starts at, and the video time of every join.
+    """
+    chunks = []
+    for gid, bars in bed['plan']:
+        g = grooves[gid]
+        bar = (g['to'] - g['from']) / g['bars']
+        chunks.append([g['from'], g['to'] if bars >= g['bars'] else g['from'] + bars * bar])
+    for i in range(len(chunks) - 1):
+        chunks[i][1] = seam(song, chunks[i][1], chunks[i + 1][0])
+    xf = int(0.03 * SR)
+    pick = int((chunks[0][0] - bed['pickup']) * SR)
+    lead = song[:, int(bed['pickup'] * SR):int(bed['pickup'] * SR) + pick].copy()
+    lead[:, :int(0.15 * SR)] *= np.linspace(0, 1, int(0.15 * SR))
+    parts = []
+    cursor = pick
+    joins = []
+    for i, (a, b) in enumerate(chunks):
+        ia, ib = int(a * SR), int(b * SR)
+        last = i == len(chunks) - 1
+        x = song[:, ia - xf:ib + (xf if last else 0)].copy()
+        # In over the 30 ms before this downbeat; out over the 30 ms before the next
+        # one, so the next groove's downbeat is the only hit on the join.
+        x[:, :xf] *= np.sin(np.linspace(0, np.pi / 2, xf)) ** 2
+        x[:, -xf:] *= np.cos(np.linspace(0, np.pi / 2, xf)) ** 2
+        joins.append(bed['downbeat'] + (cursor - pick) / SR)
+        parts.append((cursor - xf, x))
+        cursor += ib - ia
+    audio = np.zeros((2, cursor + xf))
+    audio[:, :pick] += lead
+    for at, x in parts:
+        audio[:, at:at + x.shape[1]] += x
+    joins.append(bed['downbeat'] + (cursor - pick) / SR)
+    return audio, bed['downbeat'] - pick / SR, joins
+
+
+def peaking(x: np.ndarray, freq: float, gain: float, q: float = 0.8) -> np.ndarray:
+    """RBJ peaking EQ."""
+    a = 10 ** (gain / 40)
+    w = 2 * np.pi * freq / SR
+    alpha = np.sin(w) / (2 * q)
+    b = [1 + alpha * a, -2 * np.cos(w), 1 - alpha * a]
+    den = [1 + alpha / a, -2 * np.cos(w), 1 - alpha / a]
+    return signal.lfilter(np.array(b) / den[0], np.array(den) / den[0], x, axis=-1)
+
+
+def carve(x: np.ndarray) -> np.ndarray:
+    """Make room in the bed for the effects: below 90 Hz for the booms, a dip at 2.5 kHz for clicks and knocks."""
+    return peaking(filt(x, 'high', 90), 2500, -3.0)
+
+
+def level(x: np.ndarray, target: float, hold: int = 0, window: float = 0.6, smooth: float = 1.4) -> np.ndarray:
+    """Ride the bed to a constant loudness: slow, zero-phase gain within ±7 dB."""
+    n = int(window * SR)
+    power = np.convolve(np.mean(x ** 2, axis=0), np.ones(n) / n, mode='same')
+    gain_db = np.clip(target - 10 * np.log10(power + 1e-12), -7, 7)
+    gain_db[:hold] = gain_db[hold]
+    b, a = signal.butter(1, 1 / (smooth * SR / 2))
+    gain_db = signal.filtfilt(b, a, gain_db)
+    return x * 10 ** (gain_db / 20)
+
+
+def limiter(x: np.ndarray, ceiling: float, lookahead: float = 0.004, release: float = 0.12) -> np.ndarray:
+    """Look-ahead peak limiter: the gain is already down when a peak arrives, then recovers."""
+    from scipy.ndimage import minimum_filter1d
+    la = int(lookahead * SR)
+    peak = np.max(np.abs(x), axis=0)
+    need = minimum_filter1d(np.minimum(1.0, ceiling / (peak + 1e-12)), size=2 * la + 1)
+    coeff = np.exp(-1 / (release * SR))
+    g = np.empty_like(need)
+    current = 1.0
+    for i, v in enumerate(need):
+        current = v if v < current else v + (current - v) * coeff
+        g[i] = current
+    g = signal.filtfilt(*signal.butter(1, 2000 / (SR / 2)), g)
+    return x * np.minimum(g, need)
+
+
+def loudness(x: np.ndarray) -> float:
+    import pyloudnorm
+    return pyloudnorm.Meter(SR).integrated_loudness(x.T)
 
 
 def main():
@@ -367,61 +544,52 @@ def main():
 
     song_path = ROOT / 'public/audio/music/mere-paas-aao.mp3'
     if song_path.exists():
-        stems = {'mix': song_path}
-        if any(seg.get('stem') for seg in data['music']):
-            stems['instrumental'] = song_path.with_name(song_path.stem + '.instrumental.wav')
-            if not stems['instrumental'].exists():
-                sys.exit(f'! {stems["instrumental"].name} missing — run: python3 scripts/separate.py')
-        sources = {}
-        for name, path in stems.items():
-            x = decode(path).astype(np.float64)
-            # Each take at the same loudness over the hook (0:43–0:57.5), so segment
-            # gains mean the same thing whichever take a segment is cut from.
-            sources[name] = x * (db(-16) / rms(x[:, int(43 * SR):int(57.5 * SR)]))
+        song = decode(song_path).astype(np.float64)
+        bed = data['bed']
+        audio, at, joins = build_bed(song, bed, data['grooves'])
+        audio = level(carve(audio), bed['level'], hold=int((bed['downbeat'] - at) * SR))
+        place(music_bus, audio, at)
+        print(f'  bed: {len(joins) - 1} grooves, {joins[0]:.3f} → {joins[-1]:.3f} s; joins at',
+              ' '.join(f'{j:.2f}' for j in joins[1:-1]))
         for seg in data['music']:
-            place(music_bus, music_segment(sources[seg.get('stem', 'mix')], seg, slow), seg['at'])
+            x = music_segment(song, seg, slow)
+            a = int(seg['fadeIn'] * SR) + 1
+            body = x[:, a:max(a + 1, x.shape[1] - int((seg['fadeOut'] + 1.6) * SR))]
+            x *= db(bed['level'] + seg['gain']) / rms(body)
+            # The outro picks up exactly where the bed's last bar ends.
+            place(music_bus, x, joins[-1] if seg['id'] == 'outro' else seg['at'])
     else:
         print('! music not found — mixing sound design only')
 
-    for cue in [c for c in data['cues'] if c['type'] == 'duck']:
-        a, b = int(cue['t'] * SR), int((cue['t'] + cue['dur']) * SR)
-        ramp = int(0.12 * SR)
-        curve = np.ones(length)
-        depth = db(cue['gain'])
-        curve[a:b] = depth
-        curve[max(0, a - ramp):a] = np.linspace(1, depth, a - max(0, a - ramp))
-        curve[b:b + ramp] = np.linspace(depth, 1, len(curve[b:b + ramp]))
-        music_bus *= curve
-
     for cue in data['cues']:
-        if cue['type'] == 'duck':
-            continue
         clip = FACTORY[cue['type']](cue)
         gain = db(LEVEL[cue['type']] + cue.get('gain', 0))
-        place(sfx_bus, clip, cue['t'], gain)
+        t = cue['t'] - clip.shape[1] / SR if cue['type'] == 'reverse' else cue['t']
+        place(sfx_bus, clip, t, gain)
         if cue['type'] in REVERB_SEND:
-            place(send_bus, clip, cue['t'], gain * REVERB_SEND[cue['type']])
+            place(send_bus, clip, t, gain * REVERB_SEND[cue['type']])
 
     wet = signal.fftconvolve(send_bus, IR, axes=-1)[:, :length] * 0.6
     mix = music_bus + sfx_bus + wet
+    if '--stems' in sys.argv:
+        # QA: the music and the effects on their own, before mastering.
+        for name, bus in (('music', music_bus), ('sfx', sfx_bus + wet)):
+            write_wav(ROOT / f'out/{name}.wav', bus)
 
-    # Gentle bus glue + safety: soft clip, then peak-normalize to -1 dBFS.
-    mix = np.tanh(mix * 1.25) / np.tanh(1.25)
-    mix = normalize(mix, db(-1.0))
+    # Master: gentle glue, then -15 LUFS for phones under a -1 dBFS ceiling. The bed
+    # stays as far under the effects as the levels above put it.
+    mix = np.tanh(mix * 1.1) / np.tanh(1.1)
+    for _ in range(3):
+        mix *= db(-15.0 - loudness(mix))
+        mix = limiter(mix, db(-1.0))
     # Short fade at the very end.
     tail = int(0.25 * SR)
     mix[:, -tail:] *= np.linspace(1, 0, tail)
 
     out = ROOT / ('public/audio/soundtrack.wav' if slow else 'public/audio/soundtrack-noslow.wav')
-    pcm = (np.clip(mix, -1, 1).T * 32767).astype(np.int16)
-    import wave
-    with wave.open(str(out), 'wb') as w:
-        w.setnchannels(2)
-        w.setsampwidth(2)
-        w.setframerate(SR)
-        w.writeframes(pcm.tobytes())
-    loud = 20 * np.log10(rms(mix))
-    print(f'{out.relative_to(ROOT)} — {length / SR:.2f}s, RMS {loud:.1f} dBFS, peak -1 dBFS')
+    write_wav(out, mix)
+    peak = 20 * np.log10(np.max(np.abs(mix)))
+    print(f'{out.relative_to(ROOT)} — {length / SR:.2f}s, {loudness(mix):.1f} LUFS, peak {peak:.1f} dBFS')
 
 
 if __name__ == '__main__':

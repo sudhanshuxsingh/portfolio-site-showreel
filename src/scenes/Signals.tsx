@@ -2,7 +2,7 @@ import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { lerpView, Screen, type View } from '../components/Screen';
-import { Label, Words, w } from '../components/Type';
+import { Label, Words, lux, w } from '../components/Type';
 import { ink } from '../theme';
 
 /**
@@ -34,11 +34,11 @@ export const Signals: React.FC = () => {
       <Words
         style={{ position: 'absolute', left: RAIL + 14, top: 290 }}
         size={150}
-        lines={[w('One', 0), [{ text: 'green', at: 12, color: ink.signal }], w('signal.', 24)]}
+        lines={[w('One', 0), [{ text: 'green', at: 12, color: ink.signal }], lux('signal.', 24)]}
         exitAt={76}
       />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Your time.', [92, 104]), w('Their time.', [116, 128])]} exitAt={158} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('One-click', 170), w('copy.', 184)]} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Your time.', [92, 104]), lux('Their time.', [116, 128])]} exitAt={158} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('One-click', 170), lux('copy.', 184)]} />
       <AbsoluteFill style={{ perspective: 2000 }}>
         <div
           style={{

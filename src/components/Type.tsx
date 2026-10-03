@@ -1,6 +1,6 @@
 import { useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
-import { ink, mono, sans } from '../theme';
+import { ink, mono, sans, serif } from '../theme';
 
 export interface Word {
   text: string;
@@ -8,7 +8,12 @@ export interface Word {
   at: number;
   color?: string;
   weight?: number;
+  /** Set in the luxury serif (Instrument Serif italic), sized to sit on the same line. */
+  serif?: boolean;
 }
+
+/** Instrument Serif runs small next to Geist at display weights: scale it up to match. */
+export const SERIF_SCALE = 1.17;
 
 type Mode = 'rise' | 'slam' | 'blur';
 
@@ -63,6 +68,7 @@ export const Words: React.FC<{
           style={{
             display: 'flex',
             flexWrap: 'nowrap',
+            alignItems: 'baseline',
             justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
             gap: `0 ${size * 0.24}px`,
           }}
@@ -93,14 +99,27 @@ export const Words: React.FC<{
               if (exit === 'blur') filter = `blur(${e * size * 0.12}px)`;
               opacity *= 1 - e;
             }
+            const accent = word.serif
+              ? {
+                  fontFamily: serif,
+                  fontStyle: 'italic' as const,
+                  fontWeight: 400,
+                  fontSize: `${SERIF_SCALE}em`,
+                  letterSpacing: '-0.01em',
+                  // Same line box as the Geist words, so lines never shift.
+                  lineHeight: leading / SERIF_SCALE,
+                  // Room for the tall italic ascenders and the lean past the mask.
+                  padding: '0.14em 0.1em 0.2em 0.04em',
+                  margin: '-0.14em -0.1em -0.2em -0.04em',
+                }
+              : { padding: `0 0.04em 0.16em`, margin: `0 -0.04em -0.16em` };
             return (
               <span
                 key={i}
                 style={{
                   display: 'inline-block',
                   overflow: mode === 'rise' ? 'hidden' : 'visible',
-                  padding: `0 0.04em 0.16em`,
-                  margin: `0 -0.04em -0.16em`,
+                  ...accent,
                 }}
               >
                 <span
@@ -109,8 +128,8 @@ export const Words: React.FC<{
                     transform,
                     filter,
                     opacity,
-                    color: word.color,
-                    fontWeight: word.weight,
+                    color: word.color ?? (word.serif ? '#ececef' : undefined),
+                    fontWeight: word.serif ? 400 : word.weight,
                     transformOrigin: '50% 100%',
                     whiteSpace: 'pre',
                   }}
@@ -129,6 +148,9 @@ export const Words: React.FC<{
 /** Helper: "Most dev portfolios" at [0, 8, 16] → Word[] */
 export const w = (text: string, at: number | number[], color?: string): Word[] =>
   text.split(' ').map((t, i) => ({ text: t, at: Array.isArray(at) ? at[i] ?? at[at.length - 1] : at + i * 6, color }));
+
+/** The same, set in the luxury serif. */
+export const lux = (text: string, at: number | number[], color?: string): Word[] => w(text, at, color).map((word) => ({ ...word, serif: true }));
 
 /** Mono technical caption that types itself on. */
 export const Label: React.FC<{

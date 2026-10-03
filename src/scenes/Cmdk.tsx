@@ -3,7 +3,7 @@ import { ease, springy, tween } from '../lib/anim';
 import { clips } from '../lib/clips';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { lerpView, Screen, type View } from '../components/Screen';
-import { Label, Words, w } from '../components/Type';
+import { Label, Words, lux, w } from '../components/Type';
 import { ink, mono, sans } from '../theme';
 
 /** An isometric keycap built from stacked rounded layers (real 3D sides). */
@@ -117,7 +117,7 @@ export const Cmdk: React.FC = () => {
       <Words
         style={{ position: 'absolute', left: RAIL + 14, top: 290 }}
         size={140}
-        lines={[w('Everything,', 6), w('one keystroke', [24, 34]), w('away.', 47)]}
+        lines={[w('Everything,', 6), w('one keystroke', [24, 34]), lux('away.', 47)]}
         exitAt={300}
       />
 

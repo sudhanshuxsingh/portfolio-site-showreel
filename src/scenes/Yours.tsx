@@ -2,7 +2,7 @@ import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { Screen } from '../components/Screen';
-import { Label, Words, w } from '../components/Type';
+import { Label, Words, lux, w } from '../components/Type';
 import { ink, mono } from '../theme';
 
 interface Edit {
@@ -108,8 +108,8 @@ export const Yours: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <Label text="// 12 — make it yours" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Make it', [4, 14]), w('yours.', 26)]} exitAt={160} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('One file.', [176, 188]), [{ text: 'Your', at: 206 }, { text: 'story.', at: 216, color: ink.mutedFg }]]} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Make it', [4, 14]), lux('yours.', 26)]} exitAt={160} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('One file.', [176, 188]), [{ text: 'Your', at: 206 }, { text: 'story.', at: 216, serif: true }]]} />
       <AbsoluteFill style={{ perspective: 2000 }}>
         <div
           style={{

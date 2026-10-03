@@ -3,11 +3,10 @@
  * in seconds. Remotion reads it for the picture; scripts/mix.py reads the
  * JSON export (npm run cues) for the soundtrack, so they cannot drift apart.
  *
- * Music: "Mere Paas Aao Mere Dosto" — mostly 0:43–0:57 ("A"), and 1:18–1:36
- * ("B") where needed. Soft and slowed at the start and the end. The vocals are
- * only heard in the opening seconds; from the drop on, every cut comes from the
- * instrumental stem (scripts/separate.py), so the song sits under the picture
- * as background music. Every scene boundary below sits on a beat of that edit.
+ * Music: "Mere Paas Aao Mere Dosto". The slowed hook (0:43–0:49, with its
+ * vocals) opens the reel; from the drop on, a low, constant background bed loops
+ * whole bars of the song's vocal-free groove passages, end to end; the slowed
+ * groove closes it. The sound effects lead; the music stays underneath.
  */
 export const FPS = 60;
 export const sec = (s: number) => Math.round(s * FPS);
@@ -20,38 +19,56 @@ export interface MusicSegment {
   from: number;
   to: number;
   rate: number;
-  /** dB. */
+  /** dB, relative to the bed. */
   gain: number;
   fadeIn: number;
   fadeOut: number;
   /** Optional low-pass sweep [startHz, endHz] across the segment. */
   lowpass?: [number, number];
   reverb?: number;
-  /** After `to`, a turntable wind-down of this many seconds (pitch and speed → 0). */
-  tapeStop?: number;
-  /** Cut from the vocal-free instrumental instead of the full song. */
-  stem?: 'instrumental';
 }
 
+/** The slowed bookends. */
 export const music: MusicSegment[] = [
   // Slowed and soft, with the vocals: the hook as a memory under "most portfolios
   // look the same". The sung line ends at ~7.06 s; the only vocals in the reel.
-  { id: 'intro', at: 0, from: 43.0, to: 49.4, rate: 0.85, gain: -12, fadeIn: 1.4, fadeOut: 0.35, lowpass: [1000, 3800], reverb: 0.45 },
-  // The drop, instrumental from here on: the downbeat at 43.279 lands on the logo at 8.000 s.
-  { id: 'hook', at: 7.721, from: 43.0, to: 57.48, rate: 1, gain: -5, fadeIn: 0.02, fadeOut: 0.1, stem: 'instrumental' },
-  // 1:18–1:36 carries the tour and the features (−2 dB: this stretch of the
-  // instrumental runs hotter than the hook, relative to the full mix).
-  { id: 'verse', at: 22.342, from: 77.95, to: 96.06, rate: 1, gain: -7, fadeIn: 0.03, fadeOut: 0.08, stem: 'instrumental' },
-  // Back to the hook for craft.
-  // …and it winds down like a turntable right on the cut to the easter eggs.
-  { id: 'hook2', at: 40.566, from: 43.0, to: 57.38, rate: 1, gain: -5, fadeIn: 0.02, fadeOut: 0, tapeStop: 0.62, stem: 'instrumental' },
-  // Easter eggs: a muffled bed under the first two eggs, then silence for the avatar.
-  { id: 'eggs', at: 56.2, from: 78.0, to: 82.2, rate: 1, gain: -21, fadeIn: 0.6, fadeOut: 0.9, lowpass: [450, 900], stem: 'instrumental' },
-  // Details and "make it yours".
-  { id: 'tail', at: 68.0, from: 86.0, to: 96.06, rate: 1, gain: -8, fadeIn: 0.25, fadeOut: 0.12, stem: 'instrumental' },
-  // Slowed and soft again to close.
-  { id: 'outro', at: 78.0, from: 43.0, to: 49.4, rate: 0.85, gain: -12, fadeIn: 0.12, fadeOut: 3.2, lowpass: [3200, 900], reverb: 0.5, stem: 'instrumental' },
+  { id: 'intro', at: 0, from: 43.0, to: 49.4, rate: 0.85, gain: 1, fadeIn: 1.2, fadeOut: 0.35, lowpass: [1800, 6000], reverb: 0.4 },
+  // The band's groove, slowed, to close: its first downbeat lands on the outro.
+  { id: 'outro', at: 78.0, from: 35.312, to: 41.3, rate: 0.85, gain: 0, fadeIn: 0.05, fadeOut: 3.4, lowpass: [7000, 1400], reverb: 0.45 },
 ];
+
+/**
+ * Vocal-free passages of the song as whole bars: `from` is a downbeat, `to` the
+ * downbeat after the last bar. Nothing here was separated from the vocals, so
+ * nothing can sound hollow; the bed below loops these bars end to end.
+ */
+export const grooves = {
+  // The band's entry, before the first sung line (0:35.3–0:41.7).
+  band: { from: 35.312, to: 41.675, bars: 4 },
+  // The strings' glide after the first chorus (1:00.8–1:07.2).
+  glide: { from: 60.815, to: 67.154, bars: 4 },
+  // The organ-and-strings build before the breakdown (2:35.3–2:43.3).
+  build: { from: 155.273, to: 163.284, bars: 5 },
+} as const;
+export type GrooveId = keyof typeof grooves;
+
+/** The background bed, from the drop to the outro: one continuous groove. */
+export const bed = {
+  /** Video time of the first downbeat: the logo. */
+  downbeat: 8.0,
+  /** Source time the band's entry fill starts, played into that downbeat. */
+  pickup: 34.75,
+  /** Constant level of the bed, dBFS RMS before mastering (the effects sit above it). */
+  level: -32,
+  /** [groove, bars] in order; 44 bars ≈ 8.0 → 78.0 s. */
+  plan: [
+    ['band', 4], ['band', 4], ['band', 1],
+    ['glide', 4], ['band', 4], ['glide', 4],
+    ['build', 5],
+    ['band', 4], ['band', 4], ['glide', 4],
+    ['build', 5], ['band', 1],
+  ] as [GrooveId, number][],
+};
 
 /** Scene boundaries in seconds. */
 export const T = {
@@ -84,22 +101,17 @@ export const scene = (id: SceneId) => {
   return { from: sec(a), durationInFrames: sec(b) - sec(a) };
 };
 
-/** Video-time beats of the music edit (from src/music-beats.json). */
-import beatData from './music-beats.json';
-export const beats: number[] = music
-  .filter((m) => m.gain > -12)
-  .flatMap((m) =>
-    beatData.beats
-      .filter((b) => b >= m.from && b <= m.to)
-      .map((b) => +(m.at + (b - m.from) / m.rate).toFixed(3))
-  )
-  .sort((a, b) => a - b);
+/**
+ * Craft wall: the beats its tiles light up on (frames from the scene start).
+ * Fixed numbers, so the camera and its whooshes never move with the music plan.
+ */
+export const CRAFT_WALL_BEATS = [0, 23, 45, 67, 90, 114, 137, 161, 185, 209, 233, 256, 280, 303, 326, 351];
 
-/** Beats inside a scene, as frames relative to the scene start. */
-export const sceneBeats = (id: SceneId) => {
-  const [a, b] = T[id];
-  return beats.filter((t) => t >= a - 0.001 && t < b).map((t) => sec(t) - sec(a));
-};
+/** Cold open: hard-cut flashes of what is coming, then the hook (frames). */
+export const COLD_OPEN = { shot: 11, shots: 4 };
+
+/** Scenes that land with a zoom punch (and a hit in the mix). */
+export const PUNCH: SceneId[] = ['firstLook', 'signals', 'scroll', 'cmdk', 'sound', 'craftWall', 'registry', 'morph', 'press', 'haki', 'details', 'yours'];
 
 /** The avatar egg: when the avatar is clicked inside its scene (s from scene start). */
 export const HAKI_CLICK = 0.9;

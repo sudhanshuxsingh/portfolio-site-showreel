@@ -1,7 +1,7 @@
 import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
 import { Backdrop, RAIL } from '../components/Sheet';
-import { Label, Words, w } from '../components/Type';
+import { Label, Words, lux, w } from '../components/Type';
 import { ink, mono } from '../theme';
 
 /**
@@ -38,7 +38,7 @@ export const Sound: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <Label text="// 07 — sound design" at={2} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('It even', [0, 12]), w('sounds', 23), w('right.', 46)]} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('It even', [0, 12]), w('sounds', 23), lux('right.', 46)]} />
 
       {/* Speaker toggle, as in the site header. */}
       <div

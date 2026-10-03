@@ -2,7 +2,7 @@ import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { lerpView, Screen, screenHeight, screenPoint, type ScreenProps } from '../components/Screen';
-import { Callout, Label, Words, project3d, w } from '../components/Type';
+import { Callout, Label, Words, lux, project3d, w } from '../components/Type';
 import { ink } from '../theme';
 
 const PERSPECTIVE = 2200;
@@ -34,7 +34,7 @@ export const FirstLook: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <Label text="// 02 — first look" at={4} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Lit like', [8, 24]), w('a stage.', [47, 70])]} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Lit like', [8, 24]), lux('a stage.', [47, 70])]} />
       <AbsoluteFill style={{ perspective: PERSPECTIVE, perspectiveOrigin: `${ORIGIN[0]}px ${ORIGIN[1]}px` }}>
         <div
           style={{

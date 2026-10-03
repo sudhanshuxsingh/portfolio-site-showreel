@@ -5,7 +5,7 @@ import { HakiAvatar, hakiAt } from '../components/Haki';
 import { MorphLogo, SHAPE_NAMES } from '../components/MorphLogo';
 import { LIGHT_REST, PRESS_MAX, SpotlightLogo, lightAt } from '../components/SpotlightLogo';
 import { Backdrop, RAIL, SheetOverlay } from '../components/Sheet';
-import { Label, Words, w } from '../components/Type';
+import { Label, Words, lux, w } from '../components/Type';
 import { DURATION, HAKI_CLICK, sec, T } from '../timeline';
 import { ink, mono, sans } from '../theme';
 
@@ -33,7 +33,7 @@ export const EggsIntro: React.FC = () => {
       style={{ position: 'absolute', left: RAIL + 14, top: 640 }}
       size={190}
       weight={660}
-      lines={[w('Now, the', [8, 16]), w('easter', 28), [{ text: 'eggs.', at: 40, color: ink.mutedFg }]]}
+      lines={[w('Now, the', [8, 16]), lux('easter', 28), lux('eggs.', 40)]}
     />
   );
   return (
@@ -81,7 +81,7 @@ export const Morph: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <Label text="// egg 01 — morphing logo" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Hover', 2), w('the logo.', [12, 22])]} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Hover', 2), [...w('the', 12), ...lux('logo.', 22)]]} />
       <AbsoluteFill style={{ alignItems: 'center', top: 760, height: 560, transform: `scale(${(0.9 + 0.1 * enter) * (1 + pulse * 0.03)})`, opacity: enter }}>
         <MorphLogo ms={ms} changes={changes} size={800} glow={pulse * 24} />
       </AbsoluteFill>
@@ -138,7 +138,7 @@ export const Press: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <Label text="// egg 02 — tactile mark" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Press', 2), w('the mark.', [12, 22])]} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Press', 2), [...w('the', 12), ...lux('mark.', 22)]]} />
       <AbsoluteFill style={{ overflow: 'hidden' }}>
         <SpotlightLogo id="press" width={PRESS_LOGO.width} press={press} light={light} style={{ position: 'absolute', left: PRESS_LOGO.left, top: PRESS_LOGO.top }} />
       </AbsoluteFill>
@@ -195,7 +195,7 @@ export const Haki: React.FC = () => {
         <Words
           style={{ position: 'absolute', left: RAIL + 14, top: 290 }}
           size={150}
-          lines={[w('Click', 4), w('the avatar.', [14, 26])]}
+          lines={[w('Click', 4), [...w('the', 14), ...lux('avatar.', 26)]]}
         />
 
         {/* Full-frame shockwaves at the burst. */}

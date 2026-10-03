@@ -13,7 +13,8 @@ easter egg, in the site's own visual language.
 
 | Time | Sheet | What it shows |
 | --- | --- | --- |
-| 0:00 | 00 — The problem | A 3D wall of identical “centred avatar + two buttons” templates. *Most dev portfolios look the same. This one doesn’t.* Music slowed and soft, the only stretch with the song’s vocals. |
+| 0:00 | Cold open | Four hard-cut flashes of what is coming, a hit on each: the red avatar burst, the theme wipe, the live demos, the press of the mark. A sub drop into the hook. |
+| 0:00.7 | 00 — The problem | A 3D wall of identical “centred avatar + two buttons” templates. *Most dev portfolios look the same. This one doesn’t.* Music slowed and soft, the only stretch with the song’s vocals. |
 | 0:08 | 01 — The mark | The drop: on the song’s downbeat, the site’s SpotlightLogo builds itself. The dashed guides run out, the SS outline traces on, the hatch settles in and a cursor light sweeps the edges to the site’s rest spot. Name, shimmer tagline, green *Open to new roles*. |
 | 0:14 | 02 — First look | The real hero in a 3D browser: the cursor-lit mark, then the tactile press. |
 | 0:18 | 03 — Signals | One camera move across the overview rows: *One green signal. Your time. Their time. One-click copy.* |
@@ -23,7 +24,7 @@ easter egg, in the site's own visual language.
 | 0:39 | 07 — Sound | The site’s synthesized click, drawn as an oscilloscope. |
 | 0:41 | 08 — Craft | *Craft (10)*, then a 3D wall of eight live demos with the camera locking onto each. |
 | 0:49 | 09 — Registry | `pnpm dlx shadcn@latest add …/r/ai-prompt-input.json`, then the real install tabs. |
-| 0:55 | 10 — Easter eggs | *Now, the easter eggs.* The music winds down like a turntable. The morphing pixel logo, the logo’s tactile press (cursor light and spring), and the pixel avatar: one click and the palette breaks to red, with the site’s own sound sample. |
+| 0:55 | 10 — Easter eggs | *Now, the easter eggs.* The morphing pixel logo, the logo’s tactile press (cursor light and spring), and the pixel avatar: one click and the palette breaks to red, with the site’s own sound sample. |
 | 1:08 | 11 — Details | Skip link · reduced motion · JSON-LD · OG images · 404 · keyboard-first. |
 | 1:12 | 12 — Make it yours | `src/lib/site.ts` edited live, and the real hero swaps over. |
 | 1:18 | 13 — Visit | The SpotlightLogo, *Developer Portfolio.*, the stack, **sudhanshuxsingh.in**. Music slowed and soft again. |
@@ -57,28 +58,41 @@ frame-driven Remotion components:
 - The palette, Geist type, hairline rails and 45° hatch bands come straight
   from the site's `globals.css`.
 
-**Sound.** `src/cues.ts` turns the timeline and the capture event logs into
-208 timed cues. `scripts/mix.py` synthesizes every effect in numpy: keys,
-whooshes, impacts, risers and glitches. The UI click is the site's exact
-Web Audio recipe (sine 900 → 500 Hz, 55 ms). The mixer also cuts the music to
-the edit in `src/timeline.ts`, adds reverb, ducking and a tape-stop, and
-masters the result.
+**Type.** Geist carries every statement. The key word of each headline is set
+in Instrument Serif italic, a luxury serif, against it: *Most dev portfolios
+look the same.*, *Developer Portfolio.* Single-word titles (*Craft.*, the
+theme names, the rolling section index) are set in the serif alone.
+
+**Cuts.** Most scenes land with a zoom punch (104.5 % settling in a quarter
+second) and a thump.
+
+**Sound.** The effects lead and the music stays underneath. `src/cues.ts`
+turns the timeline and the capture event logs into 264 timed cues.
+`scripts/mix.py` synthesizes every effect in numpy: keys, wide stereo
+whooshes, trailer hits for the cold open, sub drops, reverse swells into the
+big moments, risers, glitches, a wooden knock on each headline and a soft
+glint on its serif word. The UI click is the site's exact Web Audio recipe
+(sine 900 → 500 Hz, 55 ms). The master is limited to -15 LUFS under a -1 dBFS
+ceiling.
 
 ## Music
 
-**“Mere Paas Aao Mere Dosto”**: mostly **0:43–0:57**, plus **1:18–1:36** where
-needed. Every scene boundary sits on a beat of that edit. The logo lands on the
-song's downbeat at 0:43.279.
+**“Mere Paas Aao Mere Dosto”**, as background music.
 
-- **Vocals only at the start:** the sung line plays in the slowed intro and
-  ends at ~7 s. From the drop on, every cut comes from a vocal-free
-  instrumental, so the song sits under the picture as background music.
-  `scripts/separate.py` makes the instrumental with UVR's MDX-Net “Inst HQ 3”
-  model, run with numpy and onnxruntime. The model downloads from GitHub on
-  the first run.
-- **Start and end:** soft *and* slowed, like a turntable, with reverb and a
-  low-pass.
-- **Middle:** full speed and full volume.
+- **Start:** the slowed hook (0:43–0:49) with its vocals, soft, under the
+  cold open and the hook. The sung line ends at ~7 s; these are the only
+  vocals in the reel.
+- **From the drop to the outro:** one continuous bed, with no gaps, cuts,
+  ducking or tape-stops. It loops whole bars of the song's own vocal-free
+  groove passages: the band's entry (0:35), the strings' glide after the
+  first chorus (1:00) and the organ-and-strings build (2:35). Nothing is
+  separated from the vocals, so nothing sounds hollow. Each join is matched
+  by rhythm and crossfaded onto a downbeat, so the groove carries on in
+  time. The bed is ridden to one constant low level, with room carved out
+  for the effects (low cut at 90 Hz, a dip at 2.5 kHz). Its first downbeat
+  lands on the logo at 0:08.
+- **End:** the band's groove, slowed and soft, picks up on the last bar of
+  the bed.
 - **`--no-slow` variant:** keeps the start and end soft but at normal speed. To
   use it, run `npm run mux -- public/audio/soundtrack-noslow.wav`.
 
@@ -90,15 +104,14 @@ committed as `public/audio/soundtrack.m4a`, so the reel renders without it.
 
 ```sh
 npm install
-pip install numpy scipy pillow onnxruntime   # mixer, stem split, dev tools
+pip install numpy scipy pillow pyloudnorm   # mixer + dev tools
 
 # 1. Footage (optional, already committed in public/capture)
 pnpm --dir ../www build && pnpm --dir ../www start
 npm run capture                           # or: npm run capture -- cmdk hero-haki
 
 # 2. Soundtrack (needs the song, see Music)
-python3 scripts/separate.py               # once: instrumental + vocals stems (several minutes on CPU)
-npm run mix
+npm run mix                               # python3 scripts/mix.py --stems also writes out/music.wav + out/sfx.wav
 
 # 3. Picture + final files
 npm run render:video                      # ~20 min on 4 cores
@@ -137,7 +150,6 @@ src/
   lib/               clip registry, easing
 scripts/
   capture.mjs        Playwright + virtual time recorder
-  separate.py        splits the song into instrumental and vocals
   mix.py             music edit + sound design + master
   export-cues.ts     timeline → out/cues.json
   mux.sh             final encodes
@@ -145,5 +157,5 @@ scripts/
 public/
   capture/           recordings + stills of the real site (+ cursor/event JSON)
   audio/             the site's avatar sample, mixed soundtrack
-  fonts/             Geist + Geist Mono (OFL)
+  fonts/             Geist, Geist Mono, Instrument Serif (all OFL)
 ```

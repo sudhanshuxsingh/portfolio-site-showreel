@@ -28,6 +28,8 @@ export const paper = {
 
 export const sans = 'Geist, ui-sans-serif, system-ui, sans-serif';
 export const mono = '"Geist Mono", ui-monospace, monospace';
+/** The luxury accent: Instrument Serif, set italic against Geist. */
+export const serif = '"Instrument Serif", ui-serif, Georgia, serif';
 
 export const WIDTH = 1080;
 export const HEIGHT = 1920;

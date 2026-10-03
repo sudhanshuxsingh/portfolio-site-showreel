@@ -1,8 +1,43 @@
-import { AbsoluteFill, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { ease, rand, tween } from '../lib/anim';
 import { Backdrop, RAIL } from '../components/Sheet';
-import { Label, Words, w } from '../components/Type';
+import { Label, Words, lux, w } from '../components/Type';
+import { COLD_OPEN } from '../timeline';
 import { ink } from '../theme';
+import { CraftWall } from './Craft';
+import { Haki, Press } from './Eggs';
+import { Theme } from './Theme';
+
+/** Cold open: hard-cut flashes of the reel's best moments (scene, frame inside it). */
+const TEASER: { C: React.FC; at: number }[] = [
+  { C: Haki, at: 212 },
+  { C: Theme, at: 54 },
+  { C: CraftWall, at: 212 },
+  { C: Press, at: 50 },
+];
+
+const ColdOpen: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { shot, shots } = COLD_OPEN;
+  const end = shot * shots;
+  if (frame >= end + 5) return null;
+  // A white flash on every cut after the first frame, the hook's own included.
+  const flash = frame >= shot ? <AbsoluteFill style={{ background: '#fff', opacity: tween(frame % shot, [0, 4], [0.5, 0]) }} /> : null;
+  if (frame >= end) return <AbsoluteFill style={{ background: '#fff', opacity: tween(frame - end, [0, 5], [0.45, 0]) }} />;
+  const i = Math.floor(frame / shot);
+  const { C, at } = TEASER[i];
+  const local = frame - i * shot;
+  return (
+    <AbsoluteFill style={{ background: ink.bg }}>
+      <AbsoluteFill style={{ transform: `scale(${1.12 - 0.12 * ease.out(local / shot)})` }}>
+        <Sequence from={i * shot - at} layout="none">
+          <C />
+        </Sequence>
+      </AbsoluteFill>
+      {flash}
+    </AbsoluteFill>
+  );
+};
 
 /** The template every portfolio uses: centred avatar, two bars, two buttons. */
 const TemplateCard: React.FC<{ crossed: number; lit: number }> = ({ crossed, lit }) => (
@@ -99,16 +134,18 @@ export const Hook: React.FC = () => {
         <Words
           style={{ position: 'absolute', left: RAIL + 14, top: 330 }}
           size={172}
-          lines={[w('Most dev', [47, 75]), w('portfolios', 101), w('look the', [153, 180]), [{ text: 'same.', at: 206, color: ink.mutedFg }]]}
+          lines={[w('Most dev', [47, 75]), w('portfolios', 101), w('look the', [153, 180]), lux('same.', 206)]}
           exitAt={258}
         />
         <Words
           style={{ position: 'absolute', left: RAIL + 14, top: 760 }}
           size={210}
           weight={680}
-          lines={[w('This one', [287, 300]), [{ text: 'doesn’t.', at: 314 }]]}
+          lines={[w('This one', [287, 300]), lux('doesn’t.', 314)]}
         />
       </AbsoluteFill>
+
+      <ColdOpen />
 
       {/* The point everything collapses into: the drop lands on it. */}
       <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>

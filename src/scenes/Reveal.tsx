@@ -126,7 +126,7 @@ export const Reveal: React.FC = () => {
             tracking={-0.055}
             leading={0.88}
             align="center"
-            lines={[[{ text: 'Sudhanshu', at: 180 }], [{ text: 'Singh', at: 203 }]]}
+            lines={[[{ text: 'Sudhanshu', at: 180 }], [{ text: 'Singh', at: 203, serif: true }]]}
           />
           <Shimmer text="Tech Lead · Full-stack GenAI developer." at={250} size={38} style={{ position: 'absolute', top: 1268 }} />
           <div

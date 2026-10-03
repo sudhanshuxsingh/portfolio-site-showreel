@@ -1,6 +1,7 @@
 import { AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame } from 'remotion';
 import { Grain, SheetOverlay, type Tone } from './components/Sheet';
-import { DURATION, scene, sec, T, type SceneId } from './timeline';
+import { ease, tween } from './lib/anim';
+import { DURATION, PUNCH, scene, sec, T, type SceneId } from './timeline';
 import { Hook } from './scenes/Hook';
 import { Reveal } from './scenes/Reveal';
 import { FirstLook } from './scenes/FirstLook';
@@ -56,11 +57,24 @@ const Overlay: React.FC = () => {
   );
 };
 
+/** The cut lands with a zoom punch: in at 104.5 %, settling over a quarter second. */
+const Punch: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const frame = useCurrentFrame();
+  const p = tween(frame, [0, 15], [0, 1], ease.out);
+  return <AbsoluteFill style={{ transform: p < 1 ? `scale(${1.045 - 0.045 * p})` : undefined }}>{children}</AbsoluteFill>;
+};
+
 export const Showreel: React.FC<{ soundtrack?: string }> = ({ soundtrack }) => (
   <AbsoluteFill style={{ background: ink.bg }}>
     {SCENES.map(({ id, C }) => (
       <Sequence key={id} {...scene(id)} name={id}>
-        <C />
+        {PUNCH.includes(id) ? (
+          <Punch>
+            <C />
+          </Punch>
+        ) : (
+          <C />
+        )}
       </Sequence>
     ))}
     <Overlay />

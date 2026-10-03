@@ -41,7 +41,7 @@ export const Outro: React.FC = () => {
           weight={660}
           leading={0.88}
           align="center"
-          lines={[[{ text: 'Developer', at: 20 }], [{ text: 'Portfolio.', at: 47, color: ink.mutedFg }]]}
+          lines={[[{ text: 'Developer', at: 20 }], [{ text: 'Portfolio.', at: 47, serif: true }]]}
         />
         <div style={{ position: 'absolute', left: RAIL + 30, right: RAIL + 30, top: 1080, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 14 }}>
           {STACK.map((item, i) => (

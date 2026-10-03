@@ -4,7 +4,7 @@
  * `npm run cues` writes them to out/cues.json for scripts/mix.py.
  */
 import { clips, type ClipName } from './lib/clips';
-import { HAKI_CLICK, sceneBeats, T, type SceneId } from './timeline';
+import { COLD_OPEN, CRAFT_WALL_BEATS, HAKI_CLICK, PUNCH, T, type SceneId } from './timeline';
 
 export type CueType =
   | 'click'
@@ -27,8 +27,13 @@ export type CueType =
   | 'haki'
   | 'scratch'
   | 'hit'
-  /** Not a sound: dips the music by `gain` dB for `dur` seconds. */
-  | 'duck';
+  | 'swish'
+  | 'boom'
+  | 'flash'
+  /** Reverse-cymbal swell; its `t` is when it ends. */
+  | 'reverse'
+  | 'tock'
+  | 'shine';
 
 export interface Cue {
   t: number;
@@ -60,15 +65,25 @@ export function buildCues(): Cue[] {
   const cues: Cue[] = [];
   const add = (cue: Cue) => cues.push({ ...cue, t: +cue.t.toFixed(4) });
 
-  // 00 Hook — ticks on each word, scratches as the templates get crossed out, a riser into the drop.
-  [47, 75, 101, 153, 180, 206, 287, 300, 314].forEach((f, i) => add({ t: at('hook', f), type: 'tick', gain: i >= 6 ? -2 : -6 }));
+  // Cold open — a hit on every flash cut, then a sub drop into the hook.
+  for (let i = 0; i < COLD_OPEN.shots; i++) add({ t: at('hook', i * COLD_OPEN.shot), type: 'flash', gain: i === 0 ? 0 : -2 - i, pan: [0, -0.3, 0.3, 0][i] });
+  add({ t: at('hook', COLD_OPEN.shot * COLD_OPEN.shots), type: 'boom', gain: -3 });
+
+  // 00 Hook — a knock as each line starts, ticks between, a glint on the serif words,
+  // scratches as the templates get crossed out, a riser into the drop.
+  [47, 101, 153, 287].forEach((f) => add({ t: at('hook', f), type: 'tock', gain: f === 287 ? 0 : -2 }));
+  [75, 180, 300].forEach((f) => add({ t: at('hook', f), type: 'tick', gain: -4 }));
+  [206, 314].forEach((f) => add({ t: at('hook', f), type: 'shine', gain: 0 }));
   add({ t: at('hook', 206), type: 'shimmer', gain: -14 });
   [262, 268, 275, 283, 290, 298].forEach((f, i) => add({ t: at('hook', f), type: 'scratch', gain: -12, pan: i % 2 ? 0.35 : -0.35 }));
   add({ t: at('hook', 262), type: 'whooshLong', gain: -10 });
-  add({ t: at('hook', 360), type: 'riser', dur: 2.0, gain: -6 });
+  add({ t: at('hook', 360), type: 'riser', dur: 2.0, gain: -9 });
+  add({ t: T.reveal[0], type: 'reverse', dur: 1.1, gain: -2 });
 
-  // 01 Reveal — the drop.
+  // 01 Reveal — the drop: a hit and a sub drop on the logo.
   add({ t: at('reveal', 0), type: 'impact', gain: 0 });
+  add({ t: at('reveal', 0), type: 'boom', gain: 0 });
+  add({ t: at('reveal', 203), type: 'shine', gain: -2 });
   add({ t: at('reveal', 2), type: 'shimmer', gain: -8 });
   add({ t: at('reveal', 24), type: 'whooshLong', gain: -9 });
   add({ t: at('reveal', 180), type: 'tick', gain: -8 });
@@ -112,8 +127,7 @@ export function buildCues(): Cue[] {
   add({ t: at('theme', 117), type: 'whoosh', gain: -7, pan: -0.3 });
   add({ t: at('theme', 2), type: 'tick', gain: -10 });
 
-  // 07 Sound — the site's synthesized click, exactly; the music steps back for it.
-  add({ t: T.sound[0] + 0.05, type: 'duck', gain: -9, dur: T.sound[1] - T.sound[0] - 0.35 });
+  // 07 Sound — the site's synthesized click, exactly.
   add({ t: at('sound', 62), type: 'click', gain: -4 });
   [70, 93, 116].forEach((f) => add({ t: at('sound', f), type: 'click', gain: 2 }));
 
@@ -122,7 +136,7 @@ export function buildCues(): Cue[] {
   for (let n = 1; n <= 10; n++) add({ t: at('craftIntro', 8 + (36 * Math.log(1 + n)) / Math.log(11)), type: 'tick', gain: -14 });
   add({ t: at('craftIntro', 100), type: 'whoosh', gain: -8 });
   // Tile activations land on every other beat of the wall (as in CraftWall).
-  const wallBeats = sceneBeats('craftWall');
+  const wallBeats = CRAFT_WALL_BEATS;
   for (let i = 0; i < 8; i++) {
     const f = wallBeats[i * 2] ?? i * 46;
     add({ t: at('craftWall', f), type: 'whoosh', gain: -13, pan: i % 2 ? 0.45 : -0.45 });
@@ -175,6 +189,33 @@ export function buildCues(): Cue[] {
   add({ t: at('outro', 20), type: 'impactSoft', gain: -8 });
   add({ t: at('outro', 232), type: 'click', gain: 0 });
   add({ t: at('outro', 384), type: 'shimmer', gain: -10 });
+
+  // Scene punches: a thump on the cut, led in by a swish where the scene has no whoosh of its own.
+  for (const id of PUNCH) {
+    const own = cues.some((c) => c.type.startsWith('whoosh') && Math.abs(c.t - T[id][0]) < 0.05);
+    if (!own) add({ t: T[id][0] - 0.15, type: 'swish', gain: -2, pan: 0 });
+    add({ t: T[id][0], type: 'thump', gain: -7 });
+  }
+
+  // Headlines: a knock on the first word, a glint on the serif word.
+  const HEADLINES: [SceneId, number[], number[]][] = [
+    ['firstLook', [8], [47]],
+    ['signals', [0, 92, 170], [24, 116, 184]],
+    ['cmdk', [6], [47]],
+    ['sound', [0], [46]],
+    ['craftIntro', [47], [0, 79]],
+    ['registry', [0], [24]],
+    ['eggsIntro', [8], [28]],
+    ['morph', [2], [22]],
+    ['press', [2], [22]],
+    ['haki', [4], [26]],
+    ['yours', [4, 176], [26, 216]],
+    ['outro', [20], [47]],
+  ];
+  for (const [id, knocks, glints] of HEADLINES) {
+    knocks.forEach((f) => add({ t: at(id, f), type: 'tock', gain: -3 }));
+    glints.forEach((f) => add({ t: at(id, f), type: 'shine', gain: -3 }));
+  }
 
   return cues.sort((a, b) => a.t - b.t);
 }

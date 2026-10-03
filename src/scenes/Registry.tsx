@@ -2,7 +2,7 @@ import { AbsoluteFill, Sequence, useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { Screen } from '../components/Screen';
-import { Label, Words, w } from '../components/Type';
+import { Label, Words, lux, w } from '../components/Type';
 import { ink, mono } from '../theme';
 
 const COMMAND = 'pnpm dlx shadcn@latest add https://www.sudhanshuxsingh.in/r/ai-prompt-input.json';
@@ -72,7 +72,7 @@ export const Registry: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <Label text="// 09 — shadcn registry" at={2} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
-      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Install', 0), w('any piece.', [24, 49])]} exitAt={340} />
+      <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Install', 0), lux('any piece.', [24, 49])]} exitAt={340} />
       <AbsoluteFill style={{ perspective: 2000 }}>
         <div
           style={{

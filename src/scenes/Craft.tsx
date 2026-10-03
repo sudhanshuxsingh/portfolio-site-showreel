@@ -4,7 +4,7 @@ import { clips, type ClipName } from '../lib/clips';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { Screen, type View } from '../components/Screen';
 import { Label, Words } from '../components/Type';
-import { sceneBeats } from '../timeline';
+import { CRAFT_WALL_BEATS } from '../timeline';
 import { ink, mono, sans } from '../theme';
 
 export const CraftIntro: React.FC = () => {
@@ -17,7 +17,7 @@ export const CraftIntro: React.FC = () => {
       <AbsoluteFill style={{ transform: `scale(${1 + exit * 0.5})`, opacity: 1 - exit, filter: `blur(${exit * 16}px)` }}>
         <Label text="// 08 — craft" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 620 }} />
         <div style={{ position: 'absolute', left: RAIL + 6, top: 670, display: 'flex', alignItems: 'flex-start' }}>
-          <Words size={330} weight={680} tracking={-0.06} mode="slam" lines={[[{ text: 'Craft.', at: 0 }]]} />
+          <Words size={330} weight={680} tracking={-0.06} mode="slam" lines={[[{ text: 'Craft.', at: 0, serif: true }]]} />
           <div
             style={{
               fontFamily: sans,
@@ -38,7 +38,7 @@ export const CraftIntro: React.FC = () => {
           size={84}
           weight={560}
           color={ink.mutedFg}
-          lines={[[{ text: 'Ten', at: 47 }, { text: 'live', at: 53, color: ink.fg }, { text: 'demos.', at: 59 }], [{ text: 'Every', at: 69 }, { text: 'one', at: 74 }, { text: 'playable.', at: 79 }]]}
+          lines={[[{ text: 'Ten', at: 47 }, { text: 'live', at: 53, color: ink.fg }, { text: 'demos.', at: 59 }], [{ text: 'Every', at: 69 }, { text: 'one', at: 74 }, { text: 'playable.', at: 79, serif: true }]]}
         />
         <div
           style={{
@@ -100,7 +100,7 @@ const fit = (clip: ClipName): View => {
 
 export const CraftWall: React.FC = () => {
   const frame = useCurrentFrame();
-  const beats = sceneBeats('craftWall');
+  const beats = CRAFT_WALL_BEATS;
   const actives = TILES.map((_, i) => beats[i * 2] ?? i * 46);
   let active = 0;
   actives.forEach((at, i) => {

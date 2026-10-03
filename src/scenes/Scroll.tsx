@@ -4,7 +4,7 @@ import { clips } from '../lib/clips';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { Screen } from '../components/Screen';
 import { Label } from '../components/Type';
-import { ink, mono, sans } from '../theme';
+import { ink, mono, serif } from '../theme';
 
 const FROM = 60;
 const RATE = 1.4;
@@ -73,11 +73,12 @@ export const Scroll: React.FC = () => {
                 position: 'absolute',
                 left: 0,
                 top: 0,
-                fontFamily: sans,
-                fontSize: 158,
-                fontWeight: 640,
-                letterSpacing: '-0.055em',
-                lineHeight: 1.05,
+                fontFamily: serif,
+                fontStyle: 'italic',
+                fontSize: 176,
+                fontWeight: 400,
+                letterSpacing: '-0.01em',
+                lineHeight: 0.98,
                 color: ink.fg,
                 transform: `translateY(${(i === 0 ? 0 : pin * 115) - pout * 115}%)`,
                 filter: `blur(${(pin + pout) * 6}px)`,

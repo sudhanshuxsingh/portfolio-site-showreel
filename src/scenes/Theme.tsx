@@ -30,7 +30,7 @@ const World: React.FC<{ mode: 'light' | 'dark'; word: string; wordAt: number; sy
         color={mode === 'light' ? paper.mutedFg : ink.dim}
         style={{ position: 'absolute', left: RAIL + 22, top: 228 }}
       />
-      <Words key={word} style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={230} weight={660} color={fg} lines={[[{ text: word, at: wordAt }]]} />
+      <Words key={word} style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={230} weight={660} color={fg} lines={[[{ text: word, at: wordAt, serif: true }]]} />
       <AbsoluteFill style={{ perspective: PERSPECTIVE, perspectiveOrigin: `${ORIGIN[0]}px ${ORIGIN[1]}px` }}>
         <div
           style={{
