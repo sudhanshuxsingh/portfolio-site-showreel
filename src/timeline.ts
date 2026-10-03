@@ -4,8 +4,10 @@
  * JSON export (npm run cues) for the soundtrack, so they cannot drift apart.
  *
  * Music: "Mere Paas Aao Mere Dosto" — mostly 0:43–0:57 ("A"), and 1:18–1:36
- * ("B") where needed. Soft and slowed at the start and the end.
- * Every scene boundary below sits on a beat of that edit.
+ * ("B") where needed. Soft and slowed at the start and the end. The vocals are
+ * only heard in the opening seconds; from the drop on, every cut comes from the
+ * instrumental stem (scripts/separate.py), so the song sits under the picture
+ * as background music. Every scene boundary below sits on a beat of that edit.
  */
 export const FPS = 60;
 export const sec = (s: number) => Math.round(s * FPS);
@@ -27,24 +29,28 @@ export interface MusicSegment {
   reverb?: number;
   /** After `to`, a turntable wind-down of this many seconds (pitch and speed → 0). */
   tapeStop?: number;
+  /** Cut from the vocal-free instrumental instead of the full song. */
+  stem?: 'instrumental';
 }
 
 export const music: MusicSegment[] = [
-  // Slowed, soft, muffled: the hook as a memory under "most portfolios look the same".
-  { id: 'intro', at: 0, from: 43.0, to: 49.4, rate: 0.85, gain: -13, fadeIn: 1.4, fadeOut: 0.35, lowpass: [700, 2600], reverb: 0.45 },
-  // The drop: the vocal downbeat at 43.279 lands on the logo at 8.000 s.
-  { id: 'hook', at: 7.721, from: 43.0, to: 57.48, rate: 1, gain: -5, fadeIn: 0.02, fadeOut: 0.1 },
-  // 1:18–1:36 carries the tour and the features.
-  { id: 'verse', at: 22.342, from: 77.95, to: 96.06, rate: 1, gain: -5, fadeIn: 0.03, fadeOut: 0.08 },
+  // Slowed and soft, with the vocals: the hook as a memory under "most portfolios
+  // look the same". The sung line ends at ~7.06 s; the only vocals in the reel.
+  { id: 'intro', at: 0, from: 43.0, to: 49.4, rate: 0.85, gain: -12, fadeIn: 1.4, fadeOut: 0.35, lowpass: [1000, 3800], reverb: 0.45 },
+  // The drop, instrumental from here on: the downbeat at 43.279 lands on the logo at 8.000 s.
+  { id: 'hook', at: 7.721, from: 43.0, to: 57.48, rate: 1, gain: -5, fadeIn: 0.02, fadeOut: 0.1, stem: 'instrumental' },
+  // 1:18–1:36 carries the tour and the features (−2 dB: this stretch of the
+  // instrumental runs hotter than the hook, relative to the full mix).
+  { id: 'verse', at: 22.342, from: 77.95, to: 96.06, rate: 1, gain: -7, fadeIn: 0.03, fadeOut: 0.08, stem: 'instrumental' },
   // Back to the hook for craft.
   // …and it winds down like a turntable right on the cut to the easter eggs.
-  { id: 'hook2', at: 40.566, from: 43.0, to: 57.38, rate: 1, gain: -5, fadeIn: 0.02, fadeOut: 0, tapeStop: 0.62 },
-  // Easter eggs: a muffled bed under the first two eggs, then silence for the Haki.
-  { id: 'eggs', at: 56.2, from: 78.0, to: 82.2, rate: 1, gain: -19, fadeIn: 0.6, fadeOut: 0.9, lowpass: [450, 900] },
+  { id: 'hook2', at: 40.566, from: 43.0, to: 57.38, rate: 1, gain: -5, fadeIn: 0.02, fadeOut: 0, tapeStop: 0.62, stem: 'instrumental' },
+  // Easter eggs: a muffled bed under the first two eggs, then silence for the avatar.
+  { id: 'eggs', at: 56.2, from: 78.0, to: 82.2, rate: 1, gain: -21, fadeIn: 0.6, fadeOut: 0.9, lowpass: [450, 900], stem: 'instrumental' },
   // Details and "make it yours".
-  { id: 'tail', at: 68.0, from: 86.0, to: 96.06, rate: 1, gain: -6, fadeIn: 0.25, fadeOut: 0.12 },
+  { id: 'tail', at: 68.0, from: 86.0, to: 96.06, rate: 1, gain: -8, fadeIn: 0.25, fadeOut: 0.12, stem: 'instrumental' },
   // Slowed and soft again to close.
-  { id: 'outro', at: 78.0, from: 43.0, to: 49.4, rate: 0.85, gain: -12, fadeIn: 0.12, fadeOut: 3.2, lowpass: [3200, 900], reverb: 0.5 },
+  { id: 'outro', at: 78.0, from: 43.0, to: 49.4, rate: 0.85, gain: -12, fadeIn: 0.12, fadeOut: 3.2, lowpass: [3200, 900], reverb: 0.5, stem: 'instrumental' },
 ];
 
 /** Scene boundaries in seconds. */
@@ -95,5 +101,5 @@ export const sceneBeats = (id: SceneId) => {
   return beats.filter((t) => t >= a - 0.001 && t < b).map((t) => sec(t) - sec(a));
 };
 
-/** Haki: when the avatar is clicked inside the haki scene (s from scene start). */
+/** The avatar egg: when the avatar is clicked inside its scene (s from scene start). */
 export const HAKI_CLICK = 0.9;

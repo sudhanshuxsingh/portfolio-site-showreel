@@ -1,10 +1,9 @@
 import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { ease, rand, springy, tween } from '../lib/anim';
-import { ISO } from '../lib/mark3d';
 import { Cursor } from '../components/Cursor';
 import { HakiAvatar, hakiAt } from '../components/Haki';
-import { Mark } from '../components/Mark';
 import { MorphLogo, SHAPE_NAMES } from '../components/MorphLogo';
+import { LIGHT_REST, PRESS_MAX, SpotlightLogo, lightAt } from '../components/SpotlightLogo';
 import { Backdrop, RAIL, SheetOverlay } from '../components/Sheet';
 import { Label, Words, w } from '../components/Type';
 import { DURATION, HAKI_CLICK, sec, T } from '../timeline';
@@ -34,13 +33,13 @@ export const EggsIntro: React.FC = () => {
       style={{ position: 'absolute', left: RAIL + 14, top: 640 }}
       size={190}
       weight={660}
-      lines={[w('Now, the', [8, 16]), w('hidden', 28), [{ text: 'stuff.', at: 40, color: ink.mutedFg }]]}
+      lines={[w('Now, the', [8, 16]), w('easter', 28), [{ text: 'eggs.', at: 40, color: ink.mutedFg }]]}
     />
   );
   return (
     <AbsoluteFill>
       <Backdrop />
-      <Label text="// 10 — easter eggs" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 580 }} />
+      <Label text="// 10 — for the curious" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 580 }} />
       {words}
       {glitch &&
         [0, 1].map((k) => {
@@ -101,41 +100,48 @@ export const Morph: React.FC = () => {
   );
 };
 
-const DEPTH = 1.4;
 /** The site's press spring: force = 520·Δ − 26·v (spotlight-logo.tsx). */
 const pressAt = (frame: number, down: number, up: number) => {
-  const target = DEPTH * 0.55;
   if (frame < down) return 0;
   const spring = { stiffness: 520, damping: 26 };
-  if (frame < up) return target * springy(frame, down, spring);
-  const held = target * springy(up, down, spring);
+  if (frame < up) return PRESS_MAX * springy(frame, down, spring);
+  const held = PRESS_MAX * springy(up, down, spring);
   return Math.max(0, held * (1 - springy(frame, up, spring)));
 };
 
+const PRESS_LOGO = { left: 160, top: 612, width: 760 };
+
 export const Press: React.FC = () => {
   const frame = useCurrentFrame();
-  const [cx, cy] = path(frame, [
-    [0, 980, 1700],
-    [30, 620, 1100],
-    [40, 560, 1080],
-    [104, 560, 1080],
-    [132, 900, 1500],
-  ]);
+  const cursor = (f: number) =>
+    path(f, [
+      [0, 980, 1700],
+      [30, 620, 1100],
+      [40, 560, 1080],
+      [104, 560, 1080],
+      [132, 900, 1500],
+    ]);
+  const [cx, cy] = cursor(frame);
   const down = 42;
   const up = 82;
   const press = pressAt(frame, down, up);
   const isDown = frame >= down && frame < up;
-  // Mark is centred at (540, 1080); the light follows the cursor like on the site.
-  const light: [number, number] = [cx - 540, cy - 1080];
+  // The site eases its light toward the pointer by 16 % a frame, from the rest spot.
+  const light: [number, number] = [...LIGHT_REST];
+  for (let f = 0; f <= frame; f++) {
+    const [x, y] = cursor(f);
+    const target = lightAt(PRESS_LOGO.width, [x - PRESS_LOGO.left, y - PRESS_LOGO.top]);
+    light[0] += (target[0] - light[0]) * 0.16;
+    light[1] += (target[1] - light[1]) * 0.16;
+  }
   return (
     <AbsoluteFill>
       <Backdrop />
       <Label text="// egg 02 — tactile mark" at={0} cps={3} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
       <Words style={{ position: 'absolute', left: RAIL + 14, top: 290 }} size={150} lines={[w('Press', 2), w('the mark.', [12, 22])]} />
-      {/* Guides kept short: a far-overflowing SVG repainted every frame left stale compositor tiles. */}
-      <div style={{ position: 'absolute', left: 40, top: 580, width: 1000, height: 1000 }}>
-        <Mark id="press" size={1000} camera={{ ...ISO, distance: 26, unit: 70 }} press={press} light={light} lightRadius={420} strokeWidth={2.6} guidesOpacity={0.6} guideLength={13} />
-      </div>
+      <AbsoluteFill style={{ overflow: 'hidden' }}>
+        <SpotlightLogo id="press" width={PRESS_LOGO.width} press={press} light={light} style={{ position: 'absolute', left: PRESS_LOGO.left, top: PRESS_LOGO.top }} />
+      </AbsoluteFill>
       <div style={{ position: 'absolute', left: RAIL + 22, top: 1600, fontFamily: mono, fontSize: 26, color: ink.mutedFg, letterSpacing: '0.04em', opacity: tween(frame, [down, down + 10], [0, 1]) }}>
         spring k 520 · c 26 · depth {press.toFixed(2)}
       </div>
@@ -165,8 +171,6 @@ export const Haki: React.FC = () => {
   const sx = shaking ? (rand(frame * 1.7) - 0.5) * k : 0;
   const sy = shaking ? (rand(frame * 2.3 + 5) - 0.5) * k : 0;
   const flash = burstFrames >= 0 && burstFrames < 40 ? 0.95 * Math.exp(-burstFrames / 9) : 0;
-  const titleIn = burstFrames;
-  const titleOut = tween(frame, [334, 362], [0, 1], ease.in);
   const [cx, cy] = path(frame, [
     [0, 980, 1760],
     [44, 560, 1150],
@@ -187,12 +191,11 @@ export const Haki: React.FC = () => {
             background: `radial-gradient(circle at 50% ${(centre[1] / 1920) * 100}%, rgba(255,36,20,${0.55 * red}) 0%, rgba(120,8,4,${0.4 * red}) 30%, rgba(9,9,11,0) 68%)`,
           }}
         />
-        <Label text="// egg 03 — conqueror’s haki" at={0} cps={3} color={red > 0.35 ? '#ff6a5a' : ink.dim} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
+        <Label text="// egg 03 — pixel avatar" at={0} cps={3} color={red > 0.35 ? '#ff6a5a' : ink.dim} style={{ position: 'absolute', left: RAIL + 22, top: 228 }} />
         <Words
           style={{ position: 'absolute', left: RAIL + 14, top: 290 }}
           size={150}
           lines={[w('Click', 4), w('the avatar.', [14, 26])]}
-          exitAt={CLICK + 40}
         />
 
         {/* Full-frame shockwaves at the burst. */}
@@ -262,37 +265,11 @@ export const Haki: React.FC = () => {
           <HakiAvatar ms={ms} width={avatarW} shakeScale={4} />
         </div>
 
-        {Number.isFinite(titleIn) && titleIn >= 0 && (
-          <AbsoluteFill style={{ opacity: 1 - titleOut, filter: `blur(${titleOut * 14}px)` }}>
-            <div
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: 230,
-                textAlign: 'center',
-                fontFamily: sans,
-                fontWeight: 760,
-                fontSize: 150,
-                letterSpacing: '-0.05em',
-                lineHeight: 0.92,
-                color: '#fff5f2',
-                textShadow: '0 0 40px rgba(255,40,20,0.9), 0 0 120px rgba(255,20,10,0.6)',
-                transform: `scale(${1.6 - 0.6 * tween(titleIn, [0, 10], [0, 1], ease.out)})`,
-                opacity: tween(titleIn, [0, 6], [0, 1]),
-              }}
-            >
-              Conqueror’s
-              <br />
-              Haki.
-            </div>
-          </AbsoluteFill>
-        )}
         <SheetOverlay
           tone={red > 0.35 ? 'red' : 'dark'}
           sheet={14}
           of={17}
-          fig="Fig. 10c — Conqueror’s Haki"
+          fig="Fig. 10c — Pixel avatar"
           progress={(sec(T.haki[0]) + frame) / sec(DURATION)}
         />
       </AbsoluteFill>

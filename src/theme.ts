@@ -1,7 +1,7 @@
 /**
  * The portfolio's own tokens (src/app/globals.css in sudhanshuxsingh/www):
  * zinc paper and ink, hairlines, one green "available" signal. Red is held
- * back for the Haki easter egg, the only moment the palette breaks.
+ * back for the avatar easter egg, the only moment the palette breaks.
  */
 export const ink = {
   bg: '#09090b',

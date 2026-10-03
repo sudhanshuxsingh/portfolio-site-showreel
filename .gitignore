@@ -9,3 +9,5 @@ out/*
 # The full song is a commercial track: keep it local (see README → Music).
 public/audio/music/
 public/audio/*.wav
+.cache/
+__pycache__/

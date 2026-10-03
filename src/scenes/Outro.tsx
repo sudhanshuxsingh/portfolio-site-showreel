@@ -1,8 +1,7 @@
 import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
-import { ISO } from '../lib/mark3d';
 import { Cursor } from '../components/Cursor';
-import { Mark } from '../components/Mark';
+import { SpotlightLogo } from '../components/SpotlightLogo';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { Words } from '../components/Type';
 import { SignalPill } from './Reveal';
@@ -12,8 +11,15 @@ const STACK = ['Next.js 15', 'React 19', 'TypeScript', 'Tailwind v4', 'shadcn/ui
 
 export const Outro: React.FC = () => {
   const frame = useCurrentFrame();
-  const solid = tween(frame, [10, 60], [0, 1], ease.inOut);
-  const yaw = ISO.yaw + Math.sin(frame / 70) * 12;
+  // The site's hero figure: the mark traces on, guides run out to the edges, and the
+  // light sweeps in from the lower right to the site's rest spot, then idles.
+  const draw = tween(frame, [0, 44], [0.15, 1], ease.out);
+  const guides = tween(frame, [0, 54], [0, 1], ease.out);
+  const hatch = tween(frame, [26, 84], [0, 1]);
+  const light: [number, number] = [
+    tween(frame, [0, 130], [0.96, 0.32], ease.inOut) + Math.sin(frame / 62) * 0.035,
+    tween(frame, [0, 130], [0.9, 0.3], ease.inOut) + Math.cos(frame / 78) * 0.035,
+  ];
   const fade = tween(frame, [356, 388], [0, 1], ease.inOut);
   const click = 232;
   const cta = tween(frame, [153, 175], [0, 1], ease.out);
@@ -25,19 +31,10 @@ export const Outro: React.FC = () => {
     <AbsoluteFill>
       <Backdrop />
       <AbsoluteFill style={{ opacity: 1 - fade }}>
-        <AbsoluteFill style={{ alignItems: 'center', top: 120 - 160 }}>
-          <Mark
-            id="outro"
-            size={760}
-            camera={{ yaw, pitch: ISO.pitch, distance: 26, unit: 48 }}
-            solid={solid}
-            draw={tween(frame, [0, 30], [0.3, 1])}
-            light={[-150, -180]}
-            lightRadius={360}
-            lightOpacity={1 - solid}
-            guidesOpacity={0.45 * (1 - solid * 0.5)}
-          />
-        </AbsoluteFill>
+        {/* Clipped top and bottom like the hero's <figure className="overflow-y-clip">. */}
+        <div style={{ position: 'absolute', left: 0, right: 0, top: 40, height: 640, overflow: 'hidden' }}>
+          <SpotlightLogo id="outro" width={480} draw={draw} guides={guides} hatch={hatch} light={light} style={{ position: 'absolute', left: 300, top: 47 }} />
+        </div>
         <Words
           style={{ position: 'absolute', left: 0, right: 0, top: 690 }}
           size={182}
@@ -123,7 +120,7 @@ export const Outro: React.FC = () => {
           opacity: tween(frame, [384, 398], [0, 1]) * (1 - tween(frame, [412, 420], [0, 1])),
         }}
       >
-        <Mark id="outro-end" size={150} camera={{ ...ISO, distance: 26, unit: 10 }} solid={1} guidesOpacity={0} lightOpacity={0} />
+        <SpotlightLogo id="outro-end" width={250} stroke={2} guides={0} />
         <div style={{ fontFamily: mono, fontSize: 38, letterSpacing: '0.08em', color: ink.fg }}>sudhanshuxsingh.in</div>
       </AbsoluteFill>
     </AbsoluteFill>

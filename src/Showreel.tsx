@@ -33,7 +33,7 @@ const SCENES: { id: SceneId; fig: string; tone?: Tone; overlay?: boolean; C: Rea
   { id: 'eggsIntro', fig: 'Fig. 10 — Easter eggs', C: EggsIntro },
   { id: 'morph', fig: 'Fig. 10a — Morphing logo', C: Morph },
   { id: 'press', fig: 'Fig. 10b — Tactile mark', C: Press },
-  { id: 'haki', fig: 'Fig. 10c — Conqueror’s Haki', C: Haki, overlay: false },
+  { id: 'haki', fig: 'Fig. 10c — Pixel avatar', C: Haki, overlay: false },
   { id: 'details', fig: 'Fig. 11 — Details', C: Details },
   { id: 'yours', fig: 'Fig. 12 — Make it yours', C: Yours },
   { id: 'outro', fig: 'Fig. 13 — Visit', C: Outro, overlay: false },

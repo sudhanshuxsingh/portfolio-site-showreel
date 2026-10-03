@@ -7,10 +7,12 @@ Mixes the showreel soundtrack: the music edit + synthesized sound design.
 
 Music: public/audio/music/mere-paas-aao.mp3 ("Mere Paas Aao Mere Dosto"), cut
 per the edit in src/timeline.ts — mostly 0:43–0:57, 1:18–1:36 where needed,
-soft and slowed at the start and the end.
+soft and slowed at the start and the end. Segments marked `stem: 'instrumental'`
+are cut from mere-paas-aao.instrumental.wav (python3 scripts/separate.py), so
+the vocals are only heard in the opening seconds.
 
 Every sound effect is synthesized here. The UI click is the site's own recipe
-(src/lib/sfx.ts: sine 900→500 Hz over 55 ms); the Haki moment uses the site's
+(src/lib/sfx.ts: sine 900→500 Hz over 55 ms); the avatar egg uses the site's
 own sample (public/audio/conquerors-haki.mp3).
 """
 import json
@@ -365,11 +367,19 @@ def main():
 
     song_path = ROOT / 'public/audio/music/mere-paas-aao.mp3'
     if song_path.exists():
-        song = decode(song_path).astype(np.float64)
-        ref = rms(song[:, int(43 * SR):int(57.5 * SR)])
-        song *= db(-16) / ref
+        stems = {'mix': song_path}
+        if any(seg.get('stem') for seg in data['music']):
+            stems['instrumental'] = song_path.with_name(song_path.stem + '.instrumental.wav')
+            if not stems['instrumental'].exists():
+                sys.exit(f'! {stems["instrumental"].name} missing — run: python3 scripts/separate.py')
+        sources = {}
+        for name, path in stems.items():
+            x = decode(path).astype(np.float64)
+            # Each take at the same loudness over the hook (0:43–0:57.5), so segment
+            # gains mean the same thing whichever take a segment is cut from.
+            sources[name] = x * (db(-16) / rms(x[:, int(43 * SR):int(57.5 * SR)]))
         for seg in data['music']:
-            place(music_bus, music_segment(song, seg, slow), seg['at'])
+            place(music_bus, music_segment(sources[seg.get('stem', 'mix')], seg, slow), seg['at'])
     else:
         print('! music not found — mixing sound design only')
 

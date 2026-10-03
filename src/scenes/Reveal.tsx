@@ -1,7 +1,6 @@
 import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { ease, tween } from '../lib/anim';
-import { ISO } from '../lib/mark3d';
-import { Mark } from '../components/Mark';
+import { SpotlightLogo } from '../components/SpotlightLogo';
 import { Backdrop, RAIL } from '../components/Sheet';
 import { Label, Words, w } from '../components/Type';
 import { ink, mono, sans } from '../theme';
@@ -84,17 +83,16 @@ export const SignalPill: React.FC<{ scale?: number; label?: string; style?: Reac
 export const Reveal: React.FC = () => {
   const frame = useCurrentFrame();
   const flash = tween(frame, [0, 16], [0.9, 0], ease.out);
-  const draw = tween(frame, [0, 52], [0, 1], ease.inOut);
-  const orbit = tween(frame, [18, 150], [0, 1], ease.inOut);
-  const extrude = tween(frame, [24, 120], [0, 1], ease.inOut);
-  // Long enough to reach the frame edges; far-overflowing SVG left stale compositor tiles.
-  const guides = tween(frame, [0, 70], [0, 16], ease.out);
+  // The site's SpotlightLogo, exactly: guides run out, the outline traces on,
+  // the hatch settles in, and a cursor light sweeps across to the site's rest spot.
+  const draw = tween(frame, [4, 66], [0, 1], ease.inOut);
+  const guides = tween(frame, [0, 64], [0, 1], ease.out);
+  const hatch = tween(frame, [54, 124], [0, 1]);
   const settle = tween(frame, [150, 222], [0, 1], ease.inOut);
   const exit = tween(frame, [344, 369], [0, 1], ease.in);
-
-  // A cursor light that sweeps across, then rests where the site rests it.
-  const lx = tween(frame, [0, 100], [-560, 330], ease.inOut) + tween(frame, [100, 200], [0, -560], ease.inOut);
-  const ly = tween(frame, [0, 100], [-460, 260], ease.inOut) + tween(frame, [100, 200], [0, -460], ease.inOut);
+  const lx = frame < 100 ? tween(frame, [0, 100], [-0.45, 0.88], ease.inOut) : tween(frame, [100, 200], [0.88, 0.32], ease.inOut);
+  const ly = frame < 100 ? tween(frame, [0, 100], [-0.25, 0.72], ease.inOut) : tween(frame, [100, 200], [0.72, 0.3], ease.inOut);
+  const idle: [number, number] = [lx + Math.sin(frame / 55) * 0.03 * settle, ly + Math.cos(frame / 70) * 0.03 * settle];
 
   return (
     <AbsoluteFill>
@@ -106,26 +104,17 @@ export const Reveal: React.FC = () => {
           opacity: 1 - exit,
         }}
       >
-        <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ transform: `translateY(${-140 - settle * 300}px) scale(${1 - settle * 0.28})` }}>
-            <Mark
-              id="reveal"
-              size={1000}
-              camera={{
-                yaw: ISO.yaw * orbit + Math.sin(orbit * Math.PI) * 9,
-                pitch: ISO.pitch * orbit,
-                distance: 24,
-                unit: 68,
-              }}
-              draw={draw}
-              extrude={extrude}
-              light={[lx, ly]}
-              lightRadius={430}
-              hatchOpacity={tween(frame, [80, 150], [0, 1])}
-              guidesOpacity={0.7}
-              guideLength={guides}
-              strokeWidth={2.4}
-            />
+        <AbsoluteFill style={{ overflow: 'hidden' }}>
+          <div
+            style={{
+              position: 'absolute',
+              left: 540 - 380,
+              top: 372,
+              transformOrigin: '50% 50%',
+              transform: `translateY(${-settle * 285}px) scale(${1 - settle * 0.38})`,
+            }}
+          >
+            <SpotlightLogo id="reveal" width={760} draw={draw} guides={guides} hatch={hatch} light={idle} />
           </div>
         </AbsoluteFill>
 

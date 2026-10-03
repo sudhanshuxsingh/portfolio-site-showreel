@@ -120,7 +120,7 @@ const CARDS: Card[] = [
   },
   {
     word: 'Keyboard-first.',
-    note: '⌘K · arrows · Esc · Enter or Space plays the Haki',
+    note: '⌘K · arrows · Esc · Enter or Space plays the avatar',
     visual: <Keys />,
   },
 ];

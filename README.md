@@ -13,8 +13,8 @@ easter egg, in the site's own visual language.
 
 | Time | Sheet | What it shows |
 | --- | --- | --- |
-| 0:00 | 00 — The problem | A 3D wall of identical “centred avatar + two buttons” templates. *Most dev portfolios look the same. This one doesn’t.* Music slowed and soft. |
-| 0:08 | 01 — The mark | The drop: on the song’s downbeat, the SS monogram traces itself, extrudes and orbits into the site’s exact isometric view while a cursor light sweeps its edges. Name, shimmer tagline, green *Open to new roles*. |
+| 0:00 | 00 — The problem | A 3D wall of identical “centred avatar + two buttons” templates. *Most dev portfolios look the same. This one doesn’t.* Music slowed and soft, the only stretch with the song’s vocals. |
+| 0:08 | 01 — The mark | The drop: on the song’s downbeat, the site’s SpotlightLogo builds itself. The dashed guides run out, the SS outline traces on, the hatch settles in and a cursor light sweeps the edges to the site’s rest spot. Name, shimmer tagline, green *Open to new roles*. |
 | 0:14 | 02 — First look | The real hero in a 3D browser: the cursor-lit mark, then the tactile press. |
 | 0:18 | 03 — Signals | One camera move across the overview rows: *One green signal. Your time. Their time. One-click copy.* |
 | 0:22 | 04 — Sections | The phone scroll-through, Hero → Footer, with a rolling section index. |
@@ -23,10 +23,10 @@ easter egg, in the site's own visual language.
 | 0:39 | 07 — Sound | The site’s synthesized click, drawn as an oscilloscope. |
 | 0:41 | 08 — Craft | *Craft (10)*, then a 3D wall of eight live demos with the camera locking onto each. |
 | 0:49 | 09 — Registry | `pnpm dlx shadcn@latest add …/r/ai-prompt-input.json`, then the real install tabs. |
-| 0:55 | 10 — Easter eggs | The music winds down like a turntable. Morphing pixel logo, tactile mark, and **Conqueror’s Haki**: the palette breaks to red, burst, shockwaves, the site’s own Haki sample. |
+| 0:55 | 10 — Easter eggs | *Now, the easter eggs.* The music winds down like a turntable. The morphing pixel logo, the logo’s tactile press (cursor light and spring), and the pixel avatar: one click and the palette breaks to red, with the site’s own sound sample. |
 | 1:08 | 11 — Details | Skip link · reduced motion · JSON-LD · OG images · 404 · keyboard-first. |
 | 1:12 | 12 — Make it yours | `src/lib/site.ts` edited live, and the real hero swaps over. |
-| 1:18 | 13 — Visit | Solid SS, *Developer Portfolio.*, the stack, **sudhanshuxsingh.in**. Music slowed and soft again. |
+| 1:18 | 13 — Visit | The SpotlightLogo, *Developer Portfolio.*, the stack, **sudhanshuxsingh.in**. Music slowed and soft again. |
 
 Every claim on screen comes from the portfolio’s source.
 
@@ -37,7 +37,7 @@ Every claim on screen comes from the portfolio’s source.
 (`scripts/lib/virtual-time.mjs`). `Date`, `performance.now`, timers and
 `requestAnimationFrame` are stepped exactly 1/60 s per frame, and every CSS
 or WAAPI animation is seeked to match through `document.getAnimations()`. The
-site's framer-motion springs, the Haki sequencer, cmdk, sonner and next-themes
+site's framer-motion springs, the avatar sequencer, cmdk, sonner and next-themes
 therefore play perfectly smoothly at 60 fps, however long each screenshot
 takes. Each clip also stores the cursor path and input events per frame. The
 reel draws its own cursor from these and syncs every sound to them.
@@ -45,11 +45,12 @@ reel draws its own cursor from these and syncs every sound to them.
 **The site’s components, ported.** The scenes reuse the portfolio's own parts as
 frame-driven Remotion components:
 
-- `src/lib/mark3d.ts` generalizes the site's `buildIsometric` (spotlight-logo)
-  to a perspective camera. At yaw 45° and pitch 35.26° it is the site's exact
-  view, so the SS mark can be traced, extruded, orbited, lit and pressed with
-  the site's own spring (k 520, c 26).
-- `src/components/Haki.tsx` carries the site's sprite atlas, Conqueror's Haki
+- `src/components/SpotlightLogo.tsx` is the site's SpotlightLogo, ported
+  verbatim: the same SS polygons, isometric projection, extrusion, hatch,
+  dashed guides, theme colours and cursor light. Only its inputs are
+  frame-driven. The light eases 16 % a frame toward the cursor, as on the
+  site, and the press uses the site's own spring (k 520, c 26).
+- `src/components/Haki.tsx` carries the site's pixel-avatar sprite atlas, click
   sequence and effect keyframes.
 - `src/components/MorphLogo.tsx` carries the pixel shapes and the 12 ms
   per-cell stagger.
@@ -67,8 +68,14 @@ masters the result.
 
 **“Mere Paas Aao Mere Dosto”**: mostly **0:43–0:57**, plus **1:18–1:36** where
 needed. Every scene boundary sits on a beat of that edit. The logo lands on the
-vocal downbeat at 0:43.279.
+song's downbeat at 0:43.279.
 
+- **Vocals only at the start:** the sung line plays in the slowed intro and
+  ends at ~7 s. From the drop on, every cut comes from a vocal-free
+  instrumental, so the song sits under the picture as background music.
+  `scripts/separate.py` makes the instrumental with UVR's MDX-Net “Inst HQ 3”
+  model, run with numpy and onnxruntime. The model downloads from GitHub on
+  the first run.
 - **Start and end:** soft *and* slowed, like a turntable, with reverb and a
   low-pass.
 - **Middle:** full speed and full volume.
@@ -83,13 +90,14 @@ committed as `public/audio/soundtrack.m4a`, so the reel renders without it.
 
 ```sh
 npm install
-pip install numpy scipy pillow            # mixer + dev tools
+pip install numpy scipy pillow onnxruntime   # mixer, stem split, dev tools
 
 # 1. Footage (optional, already committed in public/capture)
 pnpm --dir ../www build && pnpm --dir ../www start
 npm run capture                           # or: npm run capture -- cmdk hero-haki
 
 # 2. Soundtrack (needs the song, see Music)
+python3 scripts/separate.py               # once: instrumental + vocals stems (several minutes on CPU)
 npm run mix
 
 # 3. Picture + final files
@@ -123,17 +131,19 @@ src/
   Showreel.tsx       the composition
   scenes/            Hook · Reveal · FirstLook · Signals · Scroll · Cmdk · Theme ·
                      Sound · Craft · Registry · Eggs · Details · Yours · Outro
-  components/        Mark (3D SS) · Haki · MorphLogo · Screen (3D devices) ·
-                     Type (kinetic words, callouts) · Sheet (drawing frame) · Cursor
-  lib/               mark3d engine, clip registry, easing
+  components/        SpotlightLogo (the site's logo) · Haki (pixel avatar) · MorphLogo ·
+                     Screen (3D devices) · Type (kinetic words, callouts) ·
+                     Sheet (drawing frame) · Cursor
+  lib/               clip registry, easing
 scripts/
   capture.mjs        Playwright + virtual time recorder
+  separate.py        splits the song into instrumental and vocals
   mix.py             music edit + sound design + master
   export-cues.ts     timeline → out/cues.json
   mux.sh             final encodes
   splice.py          swap re-rendered frame ranges into a finished render
 public/
   capture/           recordings + stills of the real site (+ cursor/event JSON)
-  audio/             site Haki sample, mixed soundtrack
+  audio/             the site's avatar sample, mixed soundtrack
   fonts/             Geist + Geist Mono (OFL)
 ```

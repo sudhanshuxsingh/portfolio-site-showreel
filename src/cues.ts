@@ -134,7 +134,7 @@ export function buildCues(): Cue[] {
   add({ t: at('registry', 160), type: 'whoosh', gain: -8 });
   for (const { t } of fromClip('registry', 'craft-code', { start: 162, hold: 6, from: 150, rate: 1.36 })) add({ t, type: 'click', gain: -3 });
 
-  // 10 Easter eggs — the music cuts; glitch; morph blips; press; Haki.
+  // 10 Easter eggs — the music cuts; glitch; morph blips; press; the avatar.
   add({ t: at('eggsIntro', 0), type: 'impactSoft', gain: -8 });
   add({ t: at('eggsIntro', 50), type: 'glitch', gain: -10, dur: 0.7 });
   [30, 66, 102, 138].forEach((f, i) => add({ t: at('morph', f), type: 'blip', gain: -6, pan: [-0.3, 0.3, -0.2, 0.2][i] }));
